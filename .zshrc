@@ -11,8 +11,8 @@ source "$ZSH/oh-my-zsh.sh"
 # END ANSIBLE MANAGED BLOCK <oh-my-zsh>
 
 # BEGIN ANSIBLE MANAGED BLOCK <homebrew>
-eval "$(/opt/homebrew/bin/brew shellenv)"
-alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
+# eval "$(/opt/homebrew/bin/brew shellenv)"
+# alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
 # END ANSIBLE MANAGED BLOCK <homebrew>
 
 # BEGIN ANSIBLE MANAGED BLOCK <path>
@@ -37,16 +37,16 @@ export XDG_STATE_HOME="$HOME/.local/state"
 # END ANSIBLE MANAGED BLOCK <XDG>
 
 # BEGIN ANSIBLE MANAGED BLOCK <micromamba>
-alias conda='micromamba'
-eval "$(micromamba shell hook --shell zsh)"
-export MAMBA_ROOT_PREFIX="$HOME/.local/share/micromamba"
+# alias conda='micromamba'
+# eval "$(micromamba shell hook --shell zsh)"
+# export MAMBA_ROOT_PREFIX="$HOME/.local/share/micromamba"
 # END ANSIBLE MANAGED BLOCK <micromamba>
 
 # BEGIN ANSIBLE MANAGED BLOCK <go>
-export GOPATH="$HOME/.local/share/go"
-if [ -d "$HOME/.local/share/go/bin" ] ; then
-    PATH="$HOME/.local/share/go/bin:$PATH"
-fi
+# export GOPATH="$HOME/.local/share/go"
+# if [ -d "$HOME/.local/share/go/bin" ] ; then
+#     PATH="$HOME/.local/share/go/bin:$PATH"
+# fi
 # END ANSIBLE MANAGED BLOCK <go>
 
 eval "$(/Users/tim/.local/bin/uvc shell zsh)"
