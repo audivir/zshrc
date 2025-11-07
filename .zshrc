@@ -49,4 +49,4 @@ export XDG_STATE_HOME="$HOME/.local/state"
 # fi
 # END ANSIBLE MANAGED BLOCK <go>
 
-eval "$(/Users/tim/.local/bin/uvc shell zsh)"
+eval "$($HOME/.local/bin/uvc shell zsh)"
