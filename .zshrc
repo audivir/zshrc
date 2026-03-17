@@ -25,7 +25,7 @@ __assure_link() {
         [ "$?" -ne 0 ] && return 1 
         if [ "$actual_target" != "$expected_target" ]; then
             __eprint "$link_file points to $actual_target. Rewriting to $expected_target..."
-            ln -snf "$scratch_cache" "$user_cache" || return 1
+            ln -snf "$expected_target" "$link_file" || return 1
         fi
     elif [ -d "$link_file" ] || [ -f "$link_file" ]; then
         __eprint "$link_file is a directory or file, please backup and move it first"
