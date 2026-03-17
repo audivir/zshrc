@@ -225,9 +225,13 @@ __init_shell() {
     export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
     export CARGO_HOME="$XDG_DATA_HOME/cargo"
     if __missing rustup --help; then
-        curl -sL https://sh.rustup.rs | sh -s -- \
-            --default-toolchain nightly-2026-01-28 --no-update-default-toolchain --no-modify-path -y \
-            &>/dev/null
+        mgr="$(__package_manager rustup rustup)"
+        [ "$?" -ne 0 ] && return 1
+        if [ "$mgr" = "manual" ]; then
+            curl -sL https://sh.rustup.rs | sh -s -- \
+                --default-toolchain nightly-2026-01-28 --no-update-default-toolchain --no-modify-path -y \
+                &>/dev/null
+        fi
     fi
     # END RUST
 
