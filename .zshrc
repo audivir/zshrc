@@ -39,25 +39,8 @@ __assure_dir() {
     mkdir -p "$dir_to_check" || __eprint "$dir_to_check not found and not creatable"
 }
 
-__download() {
-    local file
-    file="$1"
-    echo "Downloading $file..." >&2
-    git archive --remote="$ZSHSETUP_REPO" HEAD "$file" | tar xO
-    if (( pipestatus[1] != 0 || pipestatus[2] != 0 )); then
-      __eprint "Failed to download $file"
-    else
-      return 0
-    fi
-}
-
 __menu() {
-    local menu
-    menu="$ZSH_CUSTOM/simple_term_menu.py"
-    if [ ! -f "$menu" ]; then
-        __download simple_term_menu.py >"$menu" || return 1
-    fi
-    PYTHONPATH="$ZSH_CUSTOM:$PYTHONPATH" python3 - <<EOF "${@}"
+    PYTHONPATH="$ZSHSETUP_HOME:$PYTHONPATH" python3 - <<EOF "${@}"
 import sys
 
 from simple_term_menu import TerminalMenu
