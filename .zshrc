@@ -18,7 +18,7 @@ __exprint() {
 __assure_link() {
     local link_file expected_target
     link_file="$1"
-    link_target="$2"
+    expected_target="$2"
     if [ -L "$link_file" ]; then
         actual_target=$(readlink "$link_file")
         [ "$?" -ne 0 ] && return 1 
@@ -349,6 +349,8 @@ update_zshrc() {
 if [ "$1" = "install" ]; then
   __install_shell
   exit 0
+elif [ "$1" = "update" ]; then
+  __update_shell
 fi
 
 __init_shell
