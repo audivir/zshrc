@@ -330,14 +330,17 @@ __install_shell() {
 }
 
 __update_shell() {
+    local returncode
     if [ ! -d "$ZSHSETUP_HOME" ]; then
         __eprint "$ZSHSETUP_HOME does not exist, installing instead"
         __install_shell
-        exit 0
+        return "$?"
     fi
     pushd "$ZSHSETUP_HOME"
-    git pull || __exprint "Failed to pull new data from $ZSHSETUP_REPO"
+    git pull || __eprint "Failed to pull new data from $ZSHSETUP_REPO"
+    returncode="$?"
     popd
+    return "$returncode"
 }
 
 if [ "$1" = "install" ]; then
@@ -345,6 +348,7 @@ if [ "$1" = "install" ]; then
   exit 0
 elif [ "$1" = "update" ]; then
   __update_shell
+  exit 0
 fi
 
 __init_shell
