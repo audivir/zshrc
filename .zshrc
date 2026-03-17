@@ -11,7 +11,8 @@ __assure_dir() {
     dir="$1"
     base_msg="$dir not found and not creatable"
     msg="${2:-$base_msg}"
-    [ ! -d "$dir" ] && (mkdir "$dir" || __eprint "$msg")
+    [ -d "$dir" ] && return 0
+    mkdir "$dir" || __eprint "$msg"
 }
 
 __download() {
@@ -28,7 +29,8 @@ __download() {
 }
 
 __init_shell() {
-    local uid user_cache scratch_user scratch_user_msg scratch_cache scratch_user_msg local_dir theme_viewer
+    local uid user_cache scratch_user scratch_user_msg 
+    local scratch_cache scratch_cache_msg local_dir theme_viewer
 
     uid="$(id -u)"
 
@@ -69,14 +71,6 @@ __init_shell() {
     ZSH_THEME="robbyrussell"
     . "$ZSH/oh-my-zsh.sh"
     HISTFILE="$ZSH_CUSTOM/zsh_history"
-
-    # BEGIN THEME VIEWER
-    theme_viewer="$ZSH_CUSTOM/theme_viewer"
-    if [ ! -f "$theme_viewer" ]; then
-        __download theme_viewer >"$theme_viewer"
-    fi
-    . "$theme_viewer"
-    # END THEME VIEWER
 
     PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
@@ -121,6 +115,14 @@ __init_shell() {
     # END ALIASES
 
     export PATH
+
+    # BEGIN THEME VIEWER
+    theme_viewer="$ZSH_CUSTOM/theme_viewer"
+    if [ ! -f "$theme_viewer" ]; then
+        __download theme_viewer >"$theme_viewer"
+    fi
+    . "$theme_viewer"
+    # END THEME VIEWER
 }
 
 update_zshrc() {
