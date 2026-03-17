@@ -105,36 +105,29 @@ __source() {
   eval "$env"
 }
 
-__missing() {
-    local cmd
-    cmd="$1"
-    shift
-    command "$cmd" "$@" &>/dev/null && return 1
-    echo "$cmd is missing..."
-}
-
-__curl() {
-    local url output
-    url="$1"
-    output="$2"
-    curl -sL "$url" -o "$output"
-}
-
-__init_cache() {
-    local user_cache scratch_cache
-    user_cache="$HOME/.cache"
-    scratch_cache="/scratch/$USER/.cache"
-    # if /home if mounted, look for /scratch to use as cache directory
-    if [ -d "/scratch" ]; then
-        __assure_dir "$scratch_cache" || return 1
-        __assure_link "$user_cache" "$scratch_cache" || return 1
-        CACHE_DIR="$scratch_cache"
-    else
-        CACHE_DIR="$user_cache"
-    fi
-}
-
 __init_shell() {
+    __missing() {
+        local cmd
+        cmd="$1"
+        shift
+        command "$cmd" "$@" &>/dev/null && return 1
+        echo "$cmd is missing..."
+    }
+
+    __init_cache() {
+        local user_cache scratch_cache
+        user_cache="$HOME/.cache"
+        scratch_cache="/scratch/$USER/.cache"
+        # if /home if mounted, look for /scratch to use as cache directory
+        if [ -d "/scratch" ]; then
+            __assure_dir "$scratch_cache" || return 1
+            __assure_link "$user_cache" "$scratch_cache" || return 1
+            CACHE_DIR="$scratch_cache"
+        else
+            CACHE_DIR="$user_cache"
+        fi
+    }
+
     local os arch uid mgr
     os="$(uname)"
     arch="$(uname -m)"
