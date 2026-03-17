@@ -172,14 +172,7 @@ __init_shell() {
     if __missing micromamba --help; then
         mgr="$(__package_manager micromamba-static micromamba)"
         if [ "$mgr" = "manual" ]; then
-            if [ "$os" != "Linux" ] || [ "$arch" != "x86_64" ]; then
-                __eprint "Manual micromamba install only for Linux 64"
-                return 1
-            fi
-            mamba_url="https://micro.mamba.pm/api/micromamba/linux-64/latest"
-            curl -sL "$mamba_url" | tar -xjO bin/micromamba >"$XDG_BIN_HOME/micromamba"
-            [ "$?" -ne 0 ] && return 1
-            chmod +x "$XDG_BIN_HOME/micromamba" || return 1
+            "$ZSHSETUP_HOME/packages/micromamba.sh" || return 1
         fi
     fi
     alias conda='micromamba'
@@ -211,9 +204,7 @@ __init_shell() {
         mgr="$(__package_manager rustup rustup)"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
-            curl -sL https://sh.rustup.rs | sh -s -- \
-                --default-toolchain nightly-2026-01-28 --no-update-default-toolchain --no-modify-path -y \
-                &>/dev/null
+            "$ZSHSETUP_HOME/packages/rustup.sh" || return 1
         fi
     fi
     # END RUST
@@ -230,8 +221,7 @@ __init_shell() {
         mgr="$(__package_manager uvc "")"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
-            curl -sL "https://github.com/audivir/uvc/raw/refs/heads/main/uvc" >"$XDG_BIN_HOME/uvc" || return 1
-            chmod +x "$XDG_BIN_HOME/uvc" || return 1
+            "$ZSHSETUP_HOME/packages/uvc.sh" || return 1
         fi
     fi
     __source command uvc shell zsh || return 1
@@ -252,15 +242,7 @@ __init_shell() {
         mgr="$(__package_manager micro micro)"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
-            tmpdir="$(mktemp -d)"
-            trap 'rm -rf "$tmpdir"' EXIT INT TERM
-            git clone https://github.com/micro-editor/micro "$tmpdir" --depth 1 --branch master || return 1
-            pushd "$tmpdir"
-            CGO_ENABLED=1 make build || return 1
-            mv micro "$XDG_BIN_HOME/micro" || return 1
-            popd
-            rm -rf "$tmpdir"
-            trap - EXIT INT TERM
+            "$ZSHSETUP_HOME/packages/micro.sh" || return 1
         fi
     fi
     # END EXTRA TOOLS
