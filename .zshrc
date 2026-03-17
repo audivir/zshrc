@@ -313,7 +313,9 @@ __init_shell() {
 
 __install_shell() {
     if [ -d "$ZSHSETUP_HOME" ]; then
-        __exprint "$ZSHSETUP_HOME already exists, use update subcommand instead"
+        __eprint "$ZSHSETUP_HOME already exists, updating instead"
+        __update_shell
+        exit 0
     fi
     trap 'rm -rf "$ZSHSETUP_HOME"' EXIT INT TERM
     if ! git clone "$ZSHSETUP_REPO" "$ZSHSETUP_HOME"; then
@@ -327,23 +329,15 @@ __install_shell() {
     exit 0
 }
 
-update_zshrc() {
-    local tmpfile
-    tmpfile=$(mktemp)
-    trap 'rm -f "$tmpfile"' EXIT INT TERM
-
-    echo "Updating .zshrc..." >&2
-    __download .zshrc >"$tmpfile" || return 1
-
-    if [ -f "$HOME/.zshrc" ]; then
-        # deletes everything up to and including the marker
-        sed '1,/^# BEGIN CUSTOM/d' "$HOME/.zshrc" >> "$tmpfile"
+__update_shell() {
+    if [ ! -d "$ZSHSETUP_HOME" ]; then
+        __eprint "$ZSHSETUP_HOME does not exist, installing instead"
+        __install_shell
+        exit 0
     fi
-
-    mv "$tmpfile" "$HOME/.zshrc"
-    echo "Update complete."
-
-    trap - EXIT INT TERM
+    pushd "$ZSHSETUP_HOME"
+    git pull || __exprint "Failed to pull new data from $ZSHSETUP_REPO"
+    popd
 }
 
 if [ "$1" = "install" ]; then
