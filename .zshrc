@@ -134,11 +134,9 @@ update_zshrc() {
     __download .zshrc >"$tmp_file" || return 1
     
     if [ -f "$HOME/.zshrc" ]; then
-        # Search for # BEGIN CUSTOM and append everything from there to the EOF
-        sed -n '/# BEGIN CUSTOM/,$p' "$HOME/.zshrc" >> "$tmp_file"
-    else
-        echo -e "\n# BEGIN CUSTOM" >> "$tmp_file"
-    fi
+        # '1,/^# BEGIN CUSTOM/d' deletes everything from line 1 
+        # up to and including the marker, leaving only the custom code.
+        sed '1,/^# BEGIN CUSTOM/d' "$HOME/.zshrc" >> "$tmp_file"
 
     mv "$tmp_file" "$HOME/.zshrc"    
     echo "Update complete."
