@@ -14,19 +14,30 @@ __assure_dir() {
     [ ! -d "$dir" ] && (mkdir "$dir" || __eprint "$msg")
 }
 
+__download() {
+    local url file
+    url="ssh://git@git.audivir.de/tihoph/zshrc"
+    file="$1"
+    git archive --remote="$ZSHRC_URL" HEAD "$file" | tar xO || __eprint "Failed to download $file"
+}
+
 __init_shell() {
-    local uid scratch_user scratch_user_msg local_dir theme_viewer theme_viewer_url
+    local uid user_cache scratch_user scratch_user_msg scratch_cache scratch_user_msg local_dir theme_viewer
 
     uid="$(id -u)"
 
     # if /home if mounted, look for /scratch to use as cache directory
+    user_cache="$HOME/.cache"
     if [ -d "/scratch" ]; then
         scratch_user="/scratch/$USER"
         scratch_user_msg="/scratch found, but $scratch_user not found and not creatable"
+        scratch_cache="$scratch_user/.cache"
+        scratch_cache_msg="$scratch_user found, but $scratch_cache not found and not creatable"
         __assure_dir "$scratch_user" "$scratch_user_msg"
-        CACHE_DIR="$scratch_user/.cache"
+        __assure_dir "$scratch_cache" "$scratch_cache_msg"
+        CACHE_DIR="$scratch_cache"
     else
-        CACHE_DIR="$HOME/.cache"
+        CACHE_DIR="$user_cache"
     fi
 
     local_dir="$HOME/.local"
@@ -55,10 +66,8 @@ __init_shell() {
 
     # BEGIN THEME VIEWER
     theme_viewer="$ZSH_CUSTOM/theme_viewer"
-    theme_viewer_url="ssh://git@git.audivir.de/tihoph/zshrc"
-    # TODO(tihoph) automatically download it
     if [ ! -f "$theme_viewer" ]; then
-        git archive --remote="$theme_viewer_url" HEAD theme_viewer | tar xO >"$theme_viewer" || __eprint "Failed to download theme viewer"
+        __download theme_viewer >"$theme_viewer"
     fi
     . "$theme_viewer"
     # END THEME VIEWER
@@ -93,10 +102,12 @@ __init_shell() {
     PATH="$XDG_DATA_HOME/cargo/bin:/opt/homebrew/opt/rustup/bin:$PATH"
     # END RUST
 
+    # BEGIN PYTHON
     # TODO(tihoph): install uv if not available
     if which uvc >/dev/null; then
         eval "$(command uvc shell zsh)"
     fi
+    # END PYTHON
 
     # BEGIN ALIASES
     alias b="bat --paging=never --style=plain --tabs=4"
@@ -106,4 +117,26 @@ __init_shell() {
     export PATH
 }
 
+update_zshrc() {
+    local tmp_file
+    tmp_file=$(mktemp)
+    trap 'rm -f "$tmp_file"' EXIT INT TERM
+
+    echo "Updating .zshrc..." >&2
+    __download .zshrc >"$tmp_file"
+    if [ -f "$HOME/.zshrc" ]; then
+        # Search for # BEGIN CUSTOM and append everything from there to the EOF
+        sed -n '/# BEGIN CUSTOM/,$p' "$HOME/.zshrc" >> "$tmp_file"
+    else
+        echo -e "\n# BEGIN CUSTOM" >> "$tmp_file"
+    fi
+
+    mv "$tmp_file" "$HOME/.zshrc"    
+    echo "Update complete."
+    
+    trap - EXIT INT TERM
+}
+
 __init_shell
+
+# BEGIN CUSTOM
