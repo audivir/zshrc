@@ -1,26 +1,50 @@
+#!/usr/bin/env zsh
 # shellcheck shell=bash
 # expect $USER and $HOME to be set
+set -u
+
+export ZSHSETUP_REPO="ssh://git@git.audivir.de/tihoph/zshrc"
+export ZSHSETUP_HOME="$HOME/.config/zshsetup"
 
 __eprint() {
     echo "$1" >&2
     return 1
 }
 
+__exprint() {
+    __eprint "$1"
+    exit 1
+}
+
+__assure_link() {
+    local link_file expected_target
+    link_source="$1"
+    link_target="$2"
+    if [ -L "$link_file" ]; then
+        actual_target=$(readlink "$link_file")
+        [ "$?" -ne 0 ] && return 1
+        if [ "$actual_target" != "$expected_target" ]; then
+            __eprint "$link_file points to $actual_target. Rewriting to $expected_target..."
+            ln -snf "$scratch_cache" "$user_cache" || return 1
+        fi
+    elif [ -d "$link_file" ] || [ -f "$link_file" ]; then
+        __eprint "$link_file is a directory or file, please backup and move it first"
+    else
+        ln -s "$expected_target" "$link_file" || return 1
+    fi
+}
+
 __assure_dir() {
-    local dir base_msg msg
-    dir="$1"
-    base_msg="$dir not found and not creatable"
-    msg="${2:-$base_msg}"
-    [ -d "$dir" ] && return 0
-    mkdir "$dir" || __eprint "$msg"
+    local dir_to_check
+    dir_to_check="$1"
+    mkdir -p "$dir_to_check" || __eprint "$dir_to_check not found and not creatable"
 }
 
 __download() {
-    local url file
-    url="ssh://git@git.audivir.de/tihoph/zshrc"
+    local file
     file="$1"
     echo "Downloading $file..." >&2
-    git archive --remote="$url" HEAD "$file" | tar xO
+    git archive --remote="$ZSHSETUP_REPO" HEAD "$file" | tar xO
     if (( pipestatus[1] != 0 || pipestatus[2] != 0 )); then
       __eprint "Failed to download $file"
     else
@@ -93,6 +117,12 @@ __package_manager() {
     esac
 }
 
+__source() {
+  local env
+  env=$("$@") || return 1
+  eval "$env"
+}
+
 __missing() {
     local cmd
     cmd="$1"
@@ -108,38 +138,26 @@ __curl() {
     curl -sL "$url" -o "$output"
 }
 
+__init_cache() {
+    local user_cache scratch_cache scratch_cache_msg link_target
+    user_cache="$HOME/.cache"
+    # if /home if mounted, look for /scratch to use as cache directory
+    if [ -d "/scratch" ]; then
+        __assure_dir "/scratch/$USER/.cache" || return 1
+        __assure_link "$user_cache" "$scratch_cache" || return 1
+        CACHE_DIR="$scratch_cache"
+    else
+        CACHE_DIR="$user_cache"
+    fi
+}
+
 __init_shell() {
     local os arch uid mgr
     os="$(uname)"
     arch="$(uname -m)"
     uid="$(id -u)"
 
-    # if /home if mounted, look for /scratch to use as cache directory
-    local user_cache scratch_user scratch_user_msg scratch_cache scratch_cache_msg link_target
-    user_cache="$HOME/.cache"
-    if [ -d "/scratch" ]; then
-        scratch_user="/scratch/$USER"
-        scratch_user_msg="/scratch found, but $scratch_user not found and not creatable"
-        scratch_cache="$scratch_user/.cache"
-        scratch_cache_msg="$scratch_user found, but $scratch_cache not found and not creatable"
-        __assure_dir "$scratch_user" "$scratch_user_msg" || return 1
-        __assure_dir "$scratch_cache" "$scratch_cache_msg" || return 1
-        if [ -L "$user_cache" ]; then
-            link_target=$(readlink "$user_cache")
-            if [ "$link_target" != "$scratch_cache" ]; then
-                __eprint "$user_cache points to $link_target. Rewriting to $scratch_cache..."
-                ln -snf "$scratch_cache" "$user_cache"
-            fi
-        elif [ -d "$user_cache" ] || [ -f "$user_cache" ]; then
-            __eprint "$user_cache is a directory or file, please backup and move it first"
-            return 1
-        else
-            ln -s "$scratch_cache" "$user_cache"
-        fi
-        CACHE_DIR="$scratch_cache"
-    else
-        CACHE_DIR="$user_cache"
-    fi
+    __init_cache || return 1
 
     export LOCAL_HOME="$HOME/.local"
     export XDG_CONFIG_HOME="$HOME/.config"
@@ -153,6 +171,7 @@ __init_shell() {
         __assure_dir "$dir" || return 1
     done
 
+    # TODO(tihoph): Install oh-my-zsh and plugins
     export ZSH="$XDG_CONFIG_HOME/ohmyzsh"
     plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
     ZSH_CACHE="$XDG_CACHE_HOME/zsh"
@@ -166,17 +185,14 @@ __init_shell() {
     PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
     # BEGIN HOMEBREW
-    local brew_env
     if [ -f "/opt/homebrew/bin/brew" ]; then
-        brew_env="$(/opt/homebrew/bin/brew shellenv)"
-        [ "$?" -ne 0 ] && return 1
-        eval "$brew_env" || return 1
+        __source /opt/homebrew/bin/brew shellenv || return 1
         alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
     fi
     # END HOMEBREW
 
     # BEGIN MICROMAMBA
-    local mamba_url mamba_env
+    local mamba_url
     if __missing micromamba --help; then
         mgr="$(__package_manager micromamba-static micromamba)"
         if [ "$mgr" = "manual" ]; then
@@ -191,9 +207,7 @@ __init_shell() {
         fi
     fi
     alias conda='micromamba'
-    mamba_env="$(command micromamba shell hook --shell zsh)"
-    [ "$?" -ne 0 ] && return 1
-    eval "$mamba_env" || return 1
+    __source command micromamba shell hook --shell zsh || return 1
     export MAMBA_ROOT_PREFIX="$XDG_DATA_HOME/micromamba"
     # END MICROMAMBA
 
@@ -235,7 +249,6 @@ __init_shell() {
     # END RUST
 
     # BEGIN PYTHON
-    local uvc_env
     if __missing uv --help; then
         mgr="$(__package_manager uv "")"
         [ "$?" -ne 0 ] && return 1
@@ -251,9 +264,7 @@ __init_shell() {
             chmod +x "$XDG_BIN_HOME/uvc" || return 1
         fi
     fi
-    uvc_env="$(command uvc shell zsh)"
-    [ "$?" -ne 0 ] && return 1
-    eval "$uvc_env" || return 1
+    __source command uvc shell zsh || return 1
     # END PYTHON
 
     # BEGIN EXTRA TOOLS
@@ -301,25 +312,43 @@ __init_shell() {
     # END THEME VIEWER
 }
 
+__install_shell() {
+    if [ -d "$ZSHSETUP_HOME" ]; then
+        __exprint "$ZSHSETUP_HOME already exists, use update subcommand instead"
+    fi
+    if ! git clone "$ZSHSETUP_REPO" "$ZSHSETUP_HOME"; then
+        __exprint "Failed to clone $ZSHSETUP_REPO to $ZSHSETUP_HOME"
+    fi
+    if ! __assure_link "$ZSHSETUP_HOME/.zshrc" "$HOME/.zshrc"; then
+        exit 1
+    fi
+    __eprint "zshsetup installed and linked"
+    exit 0
+}
+
 update_zshrc() {
-    local tmp_file
-    tmp_file=$(mktemp)
+    local tmpfile
+    tmpfile=$(mktemp)
     trap 'rm -f "$tmp_file"' EXIT INT TERM
 
     echo "Updating .zshrc..." >&2
-    __download .zshrc >"$tmp_file" || return 1
+    __download .zshrc >"$tmpfile" || return 1
 
     if [ -f "$HOME/.zshrc" ]; then
-        # '1,/^# BEGIN CUSTOM/d' deletes everything from line 1
-        # up to and including the marker, leaving only the custom code.
-        sed '1,/^# BEGIN CUSTOM/d' "$HOME/.zshrc" >> "$tmp_file"
+        # deletes everything up to and including the marker
+        sed '1,/^# BEGIN CUSTOM/d' "$HOME/.zshrc" >> "$tmpfile"
     fi
 
-    mv "$tmp_file" "$HOME/.zshrc"
+    mv "$tmpfile" "$HOME/.zshrc"
     echo "Update complete."
 
     trap - EXIT INT TERM
 }
+
+if [ "$1" = "install" ]; then
+  __install_shell
+  exit 0
+fi
 
 __init_shell
 
