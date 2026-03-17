@@ -227,7 +227,6 @@ __init_shell() {
     if __missing rustup --help; then
         mgr="$(__package_manager rustup rustup)"
         [ "$?" -ne 0 ] && return 1
-        echo "mgr: $mgr"
         if [ "$mgr" = "manual" ]; then
             curl -sL https://sh.rustup.rs | sh -s -- \
                 --default-toolchain nightly-2026-01-28 --no-update-default-toolchain --no-modify-path -y \
