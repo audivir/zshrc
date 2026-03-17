@@ -193,17 +193,7 @@ __init_shell() {
     if __missing go help; then
         mgr="$(__package_manager go golang)"
         if [ "$mgr" = "manual" ]; then
-            if [ "$os" != "Linux" ] || [ "$arch" != "x86_64" ]; then
-                __eprint "Manual go install only for Linux 64"
-                return 1
-            fi
-            tmpdir="$(mktemp -d)"
-            trap 'rm -rf "$tmpdir"' EXIT INT TERM
-            latest_go="$(curl -sL "https://go.dev/VERSION?m=text" | head -n 1)"
-            curl -sL "https://go.dev/dl/$latest_go.linux-amd64.tar.gz" | tar -xzC "$tmpdir"
-            mv "$tmpdir/go" "$XDG_DATA_HOME/golang" || return 1
-            rm -rf "$tmpdir"
-            trap - EXIT INT TERM
+            "$ZSHSETUP_HOME/packages/go.sh" || return 1
             PATH="$XDG_DATA_HOME/golang/bin:$PATH"
         fi
     fi
