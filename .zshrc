@@ -15,7 +15,7 @@ __assure_dir() {
 }
 
 __init_shell() {
-    local uid scratch_user scratch_user_msg local_dir
+    local uid scratch_user scratch_user_msg local_dir theme_viewer
 
     uid="$(id -u)"
 
@@ -51,7 +51,14 @@ __init_shell() {
     ZSH_CUSTOM="$ZSH/custom"
     ZSH_THEME="robbyrussell"
     . "$ZSH/oh-my-zsh.sh"
-    HISTFILE="$ZSH_CACHE/zsh_history"
+    HISTFILE="$ZSH_CUSTOM/zsh_history"
+
+    # BEGIN THEME VIEWER
+    theme_viewer="$ZSH_CUSTOM/theme_viewer"
+    # TODO(tihoph) automatically download it
+    [ -f "$theme_viewer" ] || __eprint "Theme viewer script not found"
+    . "$theme_viewer"
+    # END THEME VIEWER
 
     PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
@@ -88,12 +95,12 @@ __init_shell() {
         eval "$(command uvc shell zsh)"
     fi
 
-    export PATH
-
     # BEGIN ALIASES
     alias b="bat --paging=never --style=plain --tabs=4"
     alias sb="sudo bat --paging=never --style=plain --tabs=4"
     # END ALIASES
+
+    export PATH
 }
 
 __init_shell
