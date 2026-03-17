@@ -39,11 +39,8 @@ __assure_dir() {
     mkdir -p "$dir_to_check" || __eprint "$dir_to_check not found and not creatable"
 }
 
-__init_shell() {
-    local show_menu use_package_manager source_env missing init_cache
-
-    show_menu() {
-        PYTHONPATH="$ZSHSETUP_HOME:$PYTHONPATH" python3 - <<EOF "${@}"
+__menu() {
+    PYTHONPATH="$ZSHSETUP_HOME:$PYTHONPATH" python3 - <<EOF "${@}"
 import sys
 
 from simple_term_menu import TerminalMenu
@@ -55,60 +52,61 @@ if menu_entry_index is None:
     raise SystemExit(1)
 print(options[menu_entry_index])
 EOF
-    }
+}
 
-    use_package_manager() {
-        local brew_package apt_package mgr
-        brew_package="$1"
-        apt_package="$2"
-        local -a options
+__package_manager() {
+    local brew_package apt_package mgr
+    brew_package="$1"
+    apt_package="$2"
+    local -a options
 
-        case "$OSTYPE" in
-            darwin*)
-                if [ ! -z "$brew_package" ]; then
-                    options+=("brew")
-                fi
-                ;;
-            linux-gnu*)
-                if [ ! -z "$apt_package" ]; then
-                    options+=("apt")
-                fi
-                ;;
-        esac
+    case "$OSTYPE" in
+        darwin*)
+            if [ ! -z "$brew_package" ]; then
+                options+=("brew")
+            fi
+            ;;
+        linux-gnu*)
+            if [ ! -z "$apt_package" ]; then
+                options+=("apt")
+            fi
+            ;;
+    esac
 
-        options+=("manual")
+    options+=("manual")
 
-        mgr="$(show_menu "${options[@]}")"
+    mgr="$(__menu "${options[@]}")"
 
-        if [ $? -ne 0 ] || [ -z "$mgr" ]; then
+    if [ $? -ne 0 ] || [ -z "$mgr" ]; then
+        return 1
+    fi
+
+    echo "$mgr"
+
+    case "$mgr" in
+        "manual")
+            return 0
+            ;;
+        "brew")
+            NONINTERACTIVE=1 brew install "$brew_package"
+            ;;
+        "apt")
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes
+            ;;
+        *)
             return 1
-        fi
+            ;;
+    esac
+}
 
-        echo "$mgr"
+__source() {
+  local env
+  env=$("$@") || return 1
+  eval "$env"
+}
 
-        case "$mgr" in
-            "manual")
-                return 0
-                ;;
-            "brew")
-                NONINTERACTIVE=1 brew install "$brew_package"
-                ;;
-            "apt")
-                sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes
-                ;;
-            *)
-                return 1
-                ;;
-        esac
-    }
-
-    source_env() {
-        local env
-        env=$("$@") || return 1
-        eval "$env"
-    }
-
-    is_missing() {
+__init_shell() {
+    __missing() {
         local cmd
         cmd="$1"
         shift
@@ -116,7 +114,7 @@ EOF
         echo "$cmd is missing..."
     }
 
-    init_cache() {
+    __init_cache() {
         local user_cache scratch_cache
         user_cache="$HOME/.cache"
         scratch_cache="/scratch/$USER/.cache"
@@ -135,7 +133,7 @@ EOF
     arch="$(uname -m)"
     uid="$(id -u)"
 
-    init_cache || return 1
+    __init_cache || return 1
 
     export LOCAL_HOME="$HOME/.local"
     export XDG_CONFIG_HOME="$HOME/.config"
@@ -164,15 +162,15 @@ EOF
 
     # BEGIN HOMEBREW
     if [ -f "/opt/homebrew/bin/brew" ]; then
-        source_env /opt/homebrew/bin/brew shellenv || return 1
+        __source /opt/homebrew/bin/brew shellenv || return 1
         alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
     fi
     # END HOMEBREW
 
     # BEGIN MICROMAMBA
     local mamba_url
-    if is_missing micromamba --help; then
-        mgr="$(use_package_manager micromamba-static micromamba)"
+    if __missing micromamba --help; then
+        mgr="$(__package_manager micromamba-static micromamba)"
         if [ "$mgr" = "manual" ]; then
             if [ "$os" != "Linux" ] || [ "$arch" != "x86_64" ]; then
                 __eprint "Manual micromamba install only for Linux 64"
@@ -185,15 +183,15 @@ EOF
         fi
     fi
     alias conda='micromamba'
-    source_env command micromamba shell hook --shell zsh || return 1
+    __source command micromamba shell hook --shell zsh || return 1
     export MAMBA_ROOT_PREFIX="$XDG_DATA_HOME/micromamba"
     # END MICROMAMBA
 
     # BEGIN GO
     local latest_go
     PATH="$XDG_DATA_HOME/go/bin:$XDG_DATA_HOME/golang/bin:$PATH"
-    if is_missing go help; then
-        mgr="$(use_package_manager go golang)"
+    if __missing go help; then
+        mgr="$(__package_manager go golang)"
         if [ "$mgr" = "manual" ]; then
             if [ "$os" != "Linux" ] || [ "$arch" != "x86_64" ]; then
                 __eprint "Manual go install only for Linux 64"
@@ -219,8 +217,8 @@ EOF
     PATH="$XDG_DATA_HOME/cargo/bin:/opt/homebrew/opt/rustup/bin:$PATH"
     export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
     export CARGO_HOME="$XDG_DATA_HOME/cargo"
-    if is_missing rustup --help; then
-        mgr="$(use_package_manager rustup rustup)"
+    if __missing rustup --help; then
+        mgr="$(__package_manager rustup rustup)"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
             curl -sL https://sh.rustup.rs | sh -s -- \
@@ -231,27 +229,27 @@ EOF
     # END RUST
 
     # BEGIN PYTHON
-    if is_missing uv --help; then
-        mgr="$(use_package_manager uv "")"
+    if __missing uv --help; then
+        mgr="$(__package_manager uv "")"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
             command cargo install uv --root "$LOCAL_HOME" || return 1
         fi
     fi
-    if is_missing uvc --help; then
-        mgr="$(use_package_manager uvc "")"
+    if __missing uvc --help; then
+        mgr="$(__package_manager uvc "")"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
             curl -sL "https://github.com/audivir/uvc/raw/refs/heads/main/uvc" >"$XDG_BIN_HOME/uvc" || return 1
             chmod +x "$XDG_BIN_HOME/uvc" || return 1
         fi
     fi
-    source_env command uvc shell zsh || return 1
+    __source command uvc shell zsh || return 1
     # END PYTHON
 
     # BEGIN EXTRA TOOLS
-    if is_missing bat --help; then
-        mgr="$(use_package_manager bat bat)"
+    if __missing bat --help; then
+        mgr="$(__package_manager bat bat)"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "apt" ]; then
             sudo ln -sf /usr/bin/batcat /usr/local/bin/bat || return 1
@@ -260,8 +258,8 @@ EOF
         fi
     fi
 
-    if is_missing micro --help; then
-        mgr="$(use_package_manager micro micro)"
+    if __missing micro --help; then
+        mgr="$(__package_manager micro micro)"
         [ "$?" -ne 0 ] && return 1
         if [ "$mgr" = "manual" ]; then
             tmpdir="$(mktemp -d)"
