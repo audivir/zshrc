@@ -88,10 +88,10 @@ __package_manager() {
             return 0
             ;;
         "brew")
-            NONINTERACTIVE=1 brew install "$brew_package" >/dev/null
+            NONINTERACTIVE=1 brew install "$brew_package"
             ;;
         "apt")
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes >/dev/null
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes
             ;;
         *)
             return 1
@@ -227,6 +227,7 @@ __init_shell() {
     if __missing rustup --help; then
         mgr="$(__package_manager rustup rustup)"
         [ "$?" -ne 0 ] && return 1
+        echo "mgr: $mgr"
         if [ "$mgr" = "manual" ]; then
             curl -sL https://sh.rustup.rs | sh -s -- \
                 --default-toolchain nightly-2026-01-28 --no-update-default-toolchain --no-modify-path -y \
