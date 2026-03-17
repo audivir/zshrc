@@ -16,9 +16,9 @@ __assure_dir() {
 
 __init_shell() {
     local uid scratch_user scratch_user_msg local_dir
-    
+
     uid="$(id -u)"
-    
+
     # if /home if mounted, look for /scratch to use as cache directory
     if [ -d "/scratch" ]; then
         scratch_user="/scratch/$USER"
@@ -63,9 +63,9 @@ __init_shell() {
     # END HOMEBREW
 
     # BEGIN MICROMAMBA
-    if command micromamba; then
+    if which micromamba >/dev/null; then
         alias conda='micromamba'
-        eval "$(command micromamba shell hook --shell zsh)"    
+        eval "$(command micromamba shell hook --shell zsh)"
     fi
     export MAMBA_ROOT_PREFIX="$XDG_DATA_HOME/micromamba"
     # END MICROMAMBA
@@ -84,7 +84,7 @@ __init_shell() {
     # END RUST
 
     # TODO(tihoph): install uv if not available
-    if command uvc; then
+    if which uvc >/dev/null; then
         eval "$(command uvc shell zsh)"
     fi
 
