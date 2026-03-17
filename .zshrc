@@ -285,12 +285,7 @@ __init_shell() {
     export PATH
 
     # BEGIN THEME VIEWER
-    local theme_viewer
-    theme_viewer="$ZSH_CUSTOM/theme_viewer"
-    if [ ! -f "$theme_viewer" ]; then
-        __download theme_viewer >"$theme_viewer"
-    fi
-    . "$theme_viewer"
+    . "$ZSHSETUP_HOME/theme_viewer"
     # END THEME VIEWER
 }
 
