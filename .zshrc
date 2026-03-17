@@ -49,7 +49,7 @@ __init_shell() {
     fi
 
     local_dir="$HOME/.local"
-    __assure_dir "$local_dir"
+    __assure_dir "$local_dir" || return 1
 
     export XDG_CONFIG_HOME="$HOME/.config"
     export XDG_DATA_HOME="$local_dir/share"
