@@ -69,6 +69,13 @@ bat|Monokai Extended Light|Monokai Extended|bat --theme
 
 while IFS='|' read -r _app _light _dark _template; do
   [ -z "$_app" ] && continue
+
+  # skip if app is not installed
+  if ! which "$_app" >/dev/null; then
+      echo "$_app not found, cannot create themed functions" >&2
+      continue
+  fi
+  
   eval "\
     $_app() {
       if _use_light_theme; then
