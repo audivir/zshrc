@@ -1,52 +1,99 @@
-# BEGIN ANSIBLE MANAGED BLOCK <oh-my-zsh>
-export ZSH="$HOME/.config/ohmyzsh"
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
-ZSH_CACHE="$HOME/.cache/zsh"
-ZSH_COMPDUMP="$ZSH_CACHE/zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
-ZSH_CUSTOM="$ZSH/custom"
-ZSH_THEME="robbyrussell"
-HISTFILE="$ZSH_CACHE/zsh_history"
-mkdir -p "$ZSH_CACHE"
-source "$ZSH/oh-my-zsh.sh"
-# END ANSIBLE MANAGED BLOCK <oh-my-zsh>
+# shellcheck shell=bash
+# expect $USER and $HOME to be set
 
-# BEGIN ANSIBLE MANAGED BLOCK <homebrew>
-# eval "$(/opt/homebrew/bin/brew shellenv)"
-# alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
-# END ANSIBLE MANAGED BLOCK <homebrew>
+__eprint() {
+    echo "$1" >&2
+    exit 1
+}
 
-# BEGIN ANSIBLE MANAGED BLOCK <path>
-# set PATH so it includes user's private bin if it exists
-if [ -d "$HOME/bin" ] ; then
-    PATH="$HOME/bin:$PATH"
-fi
+__assure_dir() {
+    local dir base_msg msg
+    dir="$1"
+    base_msg="$dir not found and not creatable"
+    msg="${2:-$base_msg}"
+    [ ! -d "$dir" ] && (mkdir "$dir" || __eprint "$msg")
+}
 
-# set PATH so it includes user's private bin if it exists
-if [ -d "$HOME/.local/bin" ] ; then
-    PATH="$HOME/.local/bin:$PATH"
-fi
-# END ANSIBLE MANAGED BLOCK <path>
+__init_shell() {
+    local uid scratch_user scratch_user_msg local_dir
+    
+    uid="$(id -u)"
+    
+    # if /home if mounted, look for /scratch to use as cache directory
+    if [ -d "/scratch" ]; then
+        scratch_user="/scratch/$USER"
+        scratch_user_msg="/scratch found, but $scratch_user not found and not creatable"
+        __assure_dir "$scratch_user" "$scratch_user_msg"
+        CACHE_DIR="$scratch_user/.cache"
+    else
+        CACHE_DIR="$HOME/.cache"
+    fi
 
-# BEGIN ANSIBLE MANAGED BLOCK <XDG>
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_BIN_HOME="$HOME/.local/bin"
-export XDG_CACHE_HOME="$HOME/.cache"
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-export XDG_STATE_HOME="$HOME/.local/state"
-# END ANSIBLE MANAGED BLOCK <XDG>
+    local_dir="$HOME/.local"
+    __assure_dir "$local_dir"
 
-# BEGIN ANSIBLE MANAGED BLOCK <micromamba>
-# alias conda='micromamba'
-# eval "$(micromamba shell hook --shell zsh)"
-# export MAMBA_ROOT_PREFIX="$HOME/.local/share/micromamba"
-# END ANSIBLE MANAGED BLOCK <micromamba>
+    export XDG_CONFIG_HOME="$HOME/.config"
+    export XDG_DATA_HOME="$local_dir/share"
+    export XDG_BIN_HOME="$local_dir/bin"
+    export XDG_CACHE_HOME="$CACHE_DIR"
+    export XDG_RUNTIME_DIR="/run/user/$uid"
+    export XDG_STATE_HOME="$local_dir/state"
 
-# BEGIN ANSIBLE MANAGED BLOCK <go>
-# export GOPATH="$HOME/.local/share/go"
-# if [ -d "$HOME/.local/share/go/bin" ] ; then
-#     PATH="$HOME/.local/share/go/bin:$PATH"
-# fi
-# END ANSIBLE MANAGED BLOCK <go>
+    for dir in "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_BIN_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"; do
+        __assure_dir "$dir"
+    done
 
-eval "$($HOME/.local/bin/uvc shell zsh)"
+    export ZSH="$XDG_CONFIG_HOME/ohmyzsh"
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+    ZSH_CACHE="$XDG_CACHE_HOME/zsh"
+    __assure_dir "$ZSH_CACHE"
+    ZSH_COMPDUMP="$ZSH_CACHE/zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
+    ZSH_CUSTOM="$ZSH/custom"
+    ZSH_THEME="robbyrussell"
+    . "$ZSH/oh-my-zsh.sh"
+    HISTFILE="$ZSH_CACHE/zsh_history"
+
+    PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
+
+    # BEGIN HOMEBREW
+    if [ -f "/opt/homebrew/bin/brew" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+        alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
+    fi
+    # END HOMEBREW
+
+    # BEGIN MICROMAMBA
+    if command micromamba; then
+        alias conda='micromamba'
+        eval "$(command micromamba shell hook --shell zsh)"    
+    fi
+    export MAMBA_ROOT_PREFIX="$XDG_DATA_HOME/micromamba"
+    # END MICROMAMBA
+
+    # BEGIN GO
+    # TODO(tihoph): install go if not available
+    export GOPATH="$XDG_DATA_HOME/go"
+    PATH="$XDG_DATA_HOME/go/bin:$PATH"
+    # END GO
+
+    # BEGIN RUST
+    # TODO(tihoph): install rust if not available
+    export CARGO_HOME="$XDG_DATA_HOME/cargo"
+    export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
+    PATH="$XDG_DATA_HOME/cargo/bin:/opt/homebrew/opt/rustup/bin:$PATH"
+    # END RUST
+
+    # TODO(tihoph): install uv if not available
+    if command uvc; then
+        eval "$(command uvc shell zsh)"
+    fi
+
+    export PATH
+
+    # BEGIN ALIASES
+    alias b="bat --paging=never --style=plain --tabs=4"
+    alias sb="sudo bat --paging=never --style=plain --tabs=4"
+    # END ALIASES
+}
+
+__init_shell
