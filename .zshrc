@@ -319,9 +319,7 @@ __update_shell() {
     git stash || __eprint "Failed to stash local changes"
     git merge || __eprint "Failed to merge updates"
     git stash pop || __eprint "Failed to reapply local changes"
-    returncode="$?"
     popd
-    return "$returncode"
 }
 
 if [ "$1" = "install" ]; then
