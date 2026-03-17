@@ -1,7 +1,6 @@
 #!/usr/bin/env zsh
 # shellcheck shell=bash
 # expect $USER and $HOME to be set
-set -u
 
 export ZSHSETUP_REPO="ssh://git@git.audivir.de/tihoph/zshrc"
 export ZSHSETUP_HOME="$HOME/.config/zshsetup"
