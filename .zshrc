@@ -320,7 +320,10 @@ __update_shell() {
         return "$?"
     fi
     pushd "$ZSHSETUP_HOME"
-    git pull || __eprint "Failed to pull new data from $ZSHSETUP_REPO"
+    git fetch || __eprint "Failed to fetch new data from $ZSHSETUP_REPO"
+    git stash || __eprint "Failed to stash local changes"
+    git merge || __eprint "Failed to merge updates"
+    git stash pop || _eprint "Failed to reapply local changes"
     returncode="$?"
     popd
     return "$returncode"
@@ -328,10 +331,10 @@ __update_shell() {
 
 if [ "$1" = "install" ]; then
   __install_shell
-  exit 0
+  exit "$?"
 elif [ "$1" = "update" ]; then
   __update_shell
-  exit 0
+  exit "$?"
 fi
 
 __init_shell
