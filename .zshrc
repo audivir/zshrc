@@ -15,7 +15,7 @@ __assure_dir() {
 }
 
 __init_shell() {
-    local uid scratch_user scratch_user_msg local_dir theme_viewer
+    local uid scratch_user scratch_user_msg local_dir theme_viewer theme_viewer_url
 
     uid="$(id -u)"
 
@@ -55,8 +55,11 @@ __init_shell() {
 
     # BEGIN THEME VIEWER
     theme_viewer="$ZSH_CUSTOM/theme_viewer"
+    theme_viewer_url="https://git.audivir.de/tihoph/zshrc/raw/branch/main/theme_viewer"
     # TODO(tihoph) automatically download it
-    [ -f "$theme_viewer" ] || __eprint "Theme viewer script not found"
+    if [ ! -f "$theme_viewer" ]; then
+        curl -sL "$theme_viewer_url" >"$theme_viewer" || __eprint "Failed to download theme viewer"
+    fi
     . "$theme_viewer"
     # END THEME VIEWER
 
