@@ -12,7 +12,7 @@ fi
 arch="$(uname -m)"
 if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
     arch="amd64"
-elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ];
+elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
     arch="arm64"
 else
     echo "Unsupported architecture: $arch" >&2
