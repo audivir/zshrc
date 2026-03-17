@@ -137,7 +137,8 @@ update_zshrc() {
         # '1,/^# BEGIN CUSTOM/d' deletes everything from line 1 
         # up to and including the marker, leaving only the custom code.
         sed '1,/^# BEGIN CUSTOM/d' "$HOME/.zshrc" >> "$tmp_file"
-
+    fi
+    
     mv "$tmp_file" "$HOME/.zshrc"    
     echo "Update complete."
     
