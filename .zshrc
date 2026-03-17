@@ -121,11 +121,12 @@ __curl() {
 }
 
 __init_cache() {
-    local user_cache scratch_cache scratch_cache_msg link_target
+    local user_cache scratch_cache
     user_cache="$HOME/.cache"
+    scratch_cache="/scratch/$USER/.cache"
     # if /home if mounted, look for /scratch to use as cache directory
     if [ -d "/scratch" ]; then
-        __assure_dir "/scratch/$USER/.cache" || return 1
+        __assure_dir "$scratch_cache" || return 1
         __assure_link "$user_cache" "$scratch_cache" || return 1
         CACHE_DIR="$scratch_cache"
     else
