@@ -1,28 +1,27 @@
 #!/bin/sh
 os="$(uname)"
+arch="$(uname -m)"
 if [ "$os" = "Linux" ]; then
     os="linux"
 elif [ "$os" = "Darwin" ]; then
-    os="darwin"
+    os="osx"
 else
     echo "Unsupported OS: $os" >&2
     exit 1
 fi
 
-arch="$(uname -m)"
 if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
-    arch="amd64"
+    arch="64"
 elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
-    arch="arm64"
+    arch="$arch"
 else
     echo "Unsupported architecture: $arch" >&2
     exit 1
 fi
 
-latest_go="$(curl -sL "https://go.dev/VERSION?m=text" | head -n 1)"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT INT TERM
-curl -L "https://go.dev/dl/$latest_go.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
-mv "$tmpdir/go" "$XDG_DATA_HOME/golang" || return 1
-rm -rf "$tmpdir"
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT INT TERM
+curl -L "https://micro.mamba.pm/api/micromamba/$os-$arch/latest" | tar -xjO bin/micromamba >"$tmpfile" || exit 1
+chmod +x "$tmpfile" || exit 1
+mv "$tmpfile"
 trap - EXIT INT TERM
