@@ -18,11 +18,11 @@ __exprint() {
 
 __assure_link() {
     local link_file expected_target
-    link_source="$1"
+    link_file="$1"
     link_target="$2"
     if [ -L "$link_file" ]; then
         actual_target=$(readlink "$link_file")
-        [ "$?" -ne 0 ] && return 1
+        [ "$?" -ne 0 ] && return 1 
         if [ "$actual_target" != "$expected_target" ]; then
             __eprint "$link_file points to $actual_target. Rewriting to $expected_target..."
             ln -snf "$scratch_cache" "$user_cache" || return 1
@@ -316,12 +316,14 @@ __install_shell() {
     if [ -d "$ZSHSETUP_HOME" ]; then
         __exprint "$ZSHSETUP_HOME already exists, use update subcommand instead"
     fi
+    trap 'rm -rf "$ZSHSETUP_HOME"' EXIT INT TERM
     if ! git clone "$ZSHSETUP_REPO" "$ZSHSETUP_HOME"; then
         __exprint "Failed to clone $ZSHSETUP_REPO to $ZSHSETUP_HOME"
     fi
-    if ! __assure_link "$ZSHSETUP_HOME/.zshrc" "$HOME/.zshrc"; then
+    if ! __assure_link "$HOME/.zshrc" "$ZSHSETUP_HOME/.zshrc"; then
         exit 1
     fi
+    trap - EXIT INT TERM
     __eprint "zshsetup installed and linked"
     exit 0
 }
@@ -329,7 +331,7 @@ __install_shell() {
 update_zshrc() {
     local tmpfile
     tmpfile=$(mktemp)
-    trap 'rm -f "$tmp_file"' EXIT INT TERM
+    trap 'rm -f "$tmpfile"' EXIT INT TERM
 
     echo "Updating .zshrc..." >&2
     __download .zshrc >"$tmpfile" || return 1
