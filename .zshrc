@@ -29,8 +29,10 @@ __download() {
 }
 
 __init_shell() {
-    local uid user_cache scratch_user scratch_user_msg 
-    local scratch_cache scratch_cache_msg local_dir theme_viewer
+    local uid user_cache 
+    local scratch_user scratch_user_msg 
+    local scratch_cache scratch_cache_msg 
+    local link_target local_dir theme_viewer
 
     uid="$(id -u)"
 
@@ -43,6 +45,20 @@ __init_shell() {
         scratch_cache_msg="$scratch_user found, but $scratch_cache not found and not creatable"
         __assure_dir "$scratch_user" "$scratch_user_msg" || return 1
         __assure_dir "$scratch_cache" "$scratch_cache_msg" || return 1
+
+        if [ -L "$user_cache" ]; then
+            link_target=$(readlink "$user_cache")
+            if [ "$link_target" != "$scratch_cache" ]; then
+                __eprint "$user_cache points to $link_target. Rewriting to $scratch_cache..."
+                ln -snf "$scratch_cache" "$user_cache"
+            fi
+        elif [ -d "$user_cache" ] || [ -f "$user_cache" ]; then
+            __eprint "$user_cache is a directory or file, please backup and move it first"
+            return 1
+        else
+            ln -s "$scratch_cache" "$user_cache"
+        fi
+
         CACHE_DIR="$scratch_cache"
     else
         CACHE_DIR="$user_cache"
