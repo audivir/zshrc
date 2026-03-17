@@ -3,7 +3,7 @@
 
 __eprint() {
     echo "$1" >&2
-    exit 1
+    return 1
 }
 
 __assure_dir() {
@@ -18,7 +18,13 @@ __download() {
     local url file
     url="ssh://git@git.audivir.de/tihoph/zshrc"
     file="$1"
-    git archive --remote="$ZSHRC_URL" HEAD "$file" | tar xO || __eprint "Failed to download $file"
+    echo "Downloading $file..." >&2
+    git archive --remote="$url" HEAD "$file" | tar xO
+    if (( ${pipestatus[(I)1]} )); then
+      __eprint "Failed to download $file"
+    else
+      return 0
+    fi
 }
 
 __init_shell() {
@@ -33,8 +39,8 @@ __init_shell() {
         scratch_user_msg="/scratch found, but $scratch_user not found and not creatable"
         scratch_cache="$scratch_user/.cache"
         scratch_cache_msg="$scratch_user found, but $scratch_cache not found and not creatable"
-        __assure_dir "$scratch_user" "$scratch_user_msg"
-        __assure_dir "$scratch_cache" "$scratch_cache_msg"
+        __assure_dir "$scratch_user" "$scratch_user_msg" || return 1
+        __assure_dir "$scratch_cache" "$scratch_cache_msg" || return 1
         CACHE_DIR="$scratch_cache"
     else
         CACHE_DIR="$user_cache"
@@ -51,13 +57,13 @@ __init_shell() {
     export XDG_STATE_HOME="$local_dir/state"
 
     for dir in "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_BIN_HOME" "$XDG_CACHE_HOME" "$XDG_STATE_HOME"; do
-        __assure_dir "$dir"
+        __assure_dir "$dir" || return 1
     done
 
     export ZSH="$XDG_CONFIG_HOME/ohmyzsh"
     plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
     ZSH_CACHE="$XDG_CACHE_HOME/zsh"
-    __assure_dir "$ZSH_CACHE"
+    __assure_dir "$ZSH_CACHE" || return 1
     ZSH_COMPDUMP="$ZSH_CACHE/zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
     ZSH_CUSTOM="$ZSH/custom"
     ZSH_THEME="robbyrussell"
@@ -123,7 +129,8 @@ update_zshrc() {
     trap 'rm -f "$tmp_file"' EXIT INT TERM
 
     echo "Updating .zshrc..." >&2
-    __download .zshrc >"$tmp_file"
+    __download .zshrc >"$tmp_file" || return 1
+    
     if [ -f "$HOME/.zshrc" ]; then
         # Search for # BEGIN CUSTOM and append everything from there to the EOF
         sed -n '/# BEGIN CUSTOM/,$p' "$HOME/.zshrc" >> "$tmp_file"
