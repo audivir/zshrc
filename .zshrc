@@ -318,7 +318,7 @@ __update_shell() {
     git fetch || __eprint "Failed to fetch new data from $ZSHSETUP_REPO"
     git stash || __eprint "Failed to stash local changes"
     git merge || __eprint "Failed to merge updates"
-    git stash pop || _eprint "Failed to reapply local changes"
+    git stash pop || __eprint "Failed to reapply local changes"
     returncode="$?"
     popd
     return "$returncode"
