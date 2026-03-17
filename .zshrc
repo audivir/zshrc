@@ -55,10 +55,10 @@ __init_shell() {
 
     # BEGIN THEME VIEWER
     theme_viewer="$ZSH_CUSTOM/theme_viewer"
-    theme_viewer_url="https://git.audivir.de/tihoph/zshrc/raw/branch/main/theme_viewer"
+    theme_viewer_url="ssh://git@git.audivir.de/tihoph/zshrc"
     # TODO(tihoph) automatically download it
     if [ ! -f "$theme_viewer" ]; then
-        curl -sL "$theme_viewer_url" >"$theme_viewer" || __eprint "Failed to download theme viewer"
+        git archive --remote="$theme_viewer_url" HEAD theme_viewer | tar xO >"$theme_viewer" || __eprint "Failed to download theme viewer"
     fi
     . "$theme_viewer"
     # END THEME VIEWER
