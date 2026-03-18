@@ -60,7 +60,7 @@ __package_manager() {
     apt_package="$2"
 
     os="$(uname)"
-    if [ "$os" = "Darwin] && [ ! -z "$brew_package" ]; then
+    if [ "$os" = "Darwin" ] && [ ! -z "$brew_package" ]; then
         options+=("brew")
     elif [ "$os" = "Linux" ] && [ ! -z "$apt_package" ]; then
         options+=("apt")
