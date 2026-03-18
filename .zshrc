@@ -263,6 +263,11 @@ __init_shell() {
     alias sb="sudo bat --paging=never --style=plain --tabs=4"
     # END ALIASES
 
+    # BEGIN FUTHER HOME DIRECTORIES
+    GNUPGHOME="$XDG_DATA_HOME/gnupg"
+
+    # END FURTHER HOME DIRECTORIES
+
     export PATH
 
     # BEGIN THEME VIEWER
