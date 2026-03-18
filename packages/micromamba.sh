@@ -21,7 +21,7 @@ fi
 
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT INT TERM
-curl -L "https://micro.mamba.pm/api/micromamba/$os-$arch/latest" | tar -xjO bin/micromamba >"$tmpfile" || exit 1
+curl -L "https://micro.mamba.pm/api/micromamba/$os-$arch/latest" | tar -xjO bin/micromamba >"$tmpfile"
 chmod +x "$tmpfile" || exit 1
 mv "$tmpfile" "$XDG_BIN_HOME/micromamba" || exit 1
 trap - EXIT INT TERM
