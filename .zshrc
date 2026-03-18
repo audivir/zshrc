@@ -10,11 +10,6 @@ __eprint() {
     return 1
 }
 
-__exprint() {
-    __eprint "$1"
-    exit 1
-}
-
 __assure_link() {
     local link_file expected_target
     link_file="$1"
