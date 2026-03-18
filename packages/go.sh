@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+# shellcheck shell=bash
 set -euo pipefail
 
 os="$(uname)"
