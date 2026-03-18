@@ -263,10 +263,11 @@ __init_shell() {
     alias sb="sudo bat --paging=never --style=plain --tabs=4"
     # END ALIASES
 
-    # BEGIN FUTHER HOME DIRECTORIES
-    GNUPGHOME="$XDG_DATA_HOME/gnupg"
-
-    # END FURTHER HOME DIRECTORIES
+    # BEGIN ENVIRONMENT
+    export GNUPGHOME="$XDG_DATA_HOME/gnupg"
+    export MPLCONFIGDIR="$XDG_CONFIG_HOME/matplotlib"
+    export PYTHON_HISTORY="$XDG_DATA_HOME/python/python_history"
+    # END ENVIRONMENT
 
     export PATH
 
