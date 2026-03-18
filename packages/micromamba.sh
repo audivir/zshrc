@@ -16,6 +16,7 @@ fi
 if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
     arch="64"
 elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
+    # shellcheck disable=SC2269
     arch="$arch"
 else
     echo "Unsupported architecture: $arch" >&2

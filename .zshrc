@@ -1,5 +1,6 @@
 #!/usr/bin/env zsh
 # shellcheck shell=bash
+# shellcheck disable=SC1091
 # expect $USER and $HOME to be set
 
 export ZSHSETUP_REPO="ssh://git@git.audivir.de/tihoph/zshrc"
@@ -129,17 +130,31 @@ __init_shell() {
         __assure_dir "$dir" || return 1
     done
 
-    # TODO(tihoph): Install oh-my-zsh and plugins
-    export ZSH="$XDG_CONFIG_HOME/ohmyzsh"
+    # BEGIN OH-MY-ZSH
+    export ZSH="$ZSHSETUP_HOME/oh-my-zsh"
+    if [ ! -d "$ZSH" ]; then
+        "$ZSHSETUP_HOME/packages/oh-my-zsh.sh" || return 1
+    fi
+    local plugin_dir
     plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+    for plugin in "${plugins[@]}"; do
+        plugin_dir="$ZSH/plugins/$plugin"
+        if [ ! -d "$plugin_dir" ]; then
+          git clone "https://github.com/zsh-users/$plugin" "$plugin_dir" || return 1
+        fi
+    done
     ZSH_CACHE="$XDG_CACHE_HOME/zsh"
     __assure_dir "$ZSH_CACHE" || return 1
+    # shellcheck disable=SC2034
     ZSH_COMPDUMP="$ZSH_CACHE/zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
+    # shellcheck disable=SC2034
     ZSH_CUSTOM="$ZSH/custom"
+    # shellcheck disable=SC2034
     ZSH_THEME="robbyrussell"
     . "$ZSH/oh-my-zsh.sh"
-    HISTFILE="$ZSH_CUSTOM/zsh_history"
+    # END OH-MY-ZSH
 
+    HISTFILE="$ZSHSETUP_HOME/zsh_history"
     PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
     # BEGIN HOMEBREW
@@ -251,12 +266,13 @@ __init_shell() {
     export PATH
 
     # BEGIN THEME VIEWER
-    . "$ZSHSETUP_HOME/theme_viewer"
+    . "$ZSHSETUP_HOME/theme_viewer.sh"
     # END THEME VIEWER
 }
 
 __install_shell() {
     if [ -d "$ZSHSETUP_HOME" ]; then
+        __assure_link "$HOME/.zshrc" "$ZSHSETUP_HOME/.zshrc" || return 1
         __eprint "$ZSHSETUP_HOME already exists, updating instead"
         __update_shell
         return 0

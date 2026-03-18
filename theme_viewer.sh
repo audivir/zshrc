@@ -75,7 +75,7 @@ while IFS='|' read -r _app _light _dark _template; do
       echo "$_app not found, cannot create themed functions" >&2
       continue
   fi
-  
+
   eval "\
     $_app() {
       if _use_light_theme; then
