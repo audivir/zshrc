@@ -20,16 +20,15 @@ __assure_link() {
     link_file="$1"
     expected_target="$2"
     if [ -L "$link_file" ]; then
-        actual_target=$(readlink "$link_file")
-        [ "$?" -ne 0 ] && return 1 
+        actual_target=$(readlink "$link_file") || return 1
         if [ "$actual_target" != "$expected_target" ]; then
             __eprint "$link_file points to $actual_target. Rewriting to $expected_target..."
-            ln -snf "$expected_target" "$link_file" || return 1
+            ln -snf "$expected_target" "$link_file"
         fi
     elif [ -d "$link_file" ] || [ -f "$link_file" ]; then
         __eprint "$link_file is a directory or file, please backup and move it first"
     else
-        ln -s "$expected_target" "$link_file" || return 1
+        ln -s "$expected_target" "$link_file"
     fi
 }
 
@@ -55,31 +54,21 @@ EOF
 }
 
 __package_manager() {
-    local brew_package apt_package mgr
+    local brew_package apt_package os mgr
+    local -a options
     brew_package="$1"
     apt_package="$2"
-    local -a options
 
-    case "$OSTYPE" in
-        darwin*)
-            if [ ! -z "$brew_package" ]; then
-                options+=("brew")
-            fi
-            ;;
-        linux-gnu*)
-            if [ ! -z "$apt_package" ]; then
-                options+=("apt")
-            fi
-            ;;
-    esac
+    os="$(uname)"
+    if [ "$os" = "Darwin] && [ ! -z "$brew_package" ]; then
+        options+=("brew")
+    elif [ "$os" = "Linux" ] && [ ! -z "$apt_package" ]; then
+        options+=("apt")
+    fi
 
     options+=("manual")
 
-    mgr="$(__menu "${options[@]}")"
-
-    if [ $? -ne 0 ] || [ -z "$mgr" ]; then
-        return 1
-    fi
+    mgr="$(__menu "${options[@]}")" || return 1
 
     case "$mgr" in
         "manual")
