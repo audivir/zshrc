@@ -81,17 +81,17 @@ __package_manager() {
         return 1
     fi
 
-    echo "$mgr"
-
     case "$mgr" in
         "manual")
             return 0
             ;;
         "brew")
-            NONINTERACTIVE=1 brew install "$brew_package"
+            NONINTERACTIVE=1 brew install "$brew_package" || return 1
+            return 2
             ;;
         "apt")
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes || return 1
+            return 3
             ;;
         *)
             return 1
@@ -128,7 +128,7 @@ __init_cache() {
 }
 
 __init_shell() {
-    local os arch uid mgr
+    local os arch uid returncode
     os="$(uname)"
     arch="$(uname -m)"
     uid="$(id -u)"
@@ -168,11 +168,13 @@ __init_shell() {
     # END HOMEBREW
 
     # BEGIN MICROMAMBA
-    local mamba_url
     if __missing micromamba --help; then
-        mgr="$(__package_manager micromamba-static micromamba)"
-        if [ "$mgr" = "manual" ]; then
-            "$ZSHSETUP_HOME/packages/micromamba.sh" || return 1
+        __package_manager micromamba-static micromamba
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
+             "$ZSHSETUP_HOME/packages/micromamba.sh" || return 1
         fi
     fi
     alias conda='micromamba'
@@ -184,8 +186,11 @@ __init_shell() {
     local latest_go
     PATH="$XDG_DATA_HOME/go/bin:$XDG_DATA_HOME/golang/bin:$PATH"
     if __missing go help; then
-        mgr="$(__package_manager go golang)"
-        if [ "$mgr" = "manual" ]; then
+        __package_manager go golang
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             "$ZSHSETUP_HOME/packages/go.sh" || return 1
             PATH="$XDG_DATA_HOME/golang/bin:$PATH"
         fi
@@ -201,9 +206,11 @@ __init_shell() {
     export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
     export CARGO_HOME="$XDG_DATA_HOME/cargo"
     if __missing rustup --help; then
-        mgr="$(__package_manager rustup rustup)"
-        [ "$?" -ne 0 ] && return 1
-        if [ "$mgr" = "manual" ]; then
+        __package_manager rustup rustup
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             "$ZSHSETUP_HOME/packages/rustup.sh" || return 1
         fi
     fi
@@ -211,16 +218,20 @@ __init_shell() {
 
     # BEGIN PYTHON
     if __missing uv --help; then
-        mgr="$(__package_manager uv "")"
-        [ "$?" -ne 0 ] && return 1
-        if [ "$mgr" = "manual" ]; then
+        __package_manager uv ""
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             command cargo install uv --root "$LOCAL_HOME" || return 1
         fi
     fi
     if __missing uvc --help; then
-        mgr="$(__package_manager uvc "")"
-        [ "$?" -ne 0 ] && return 1
-        if [ "$mgr" = "manual" ]; then
+        __package_manager uvc ""
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             "$ZSHSETUP_HOME/packages/uvc.sh" || return 1
         fi
     fi
@@ -229,19 +240,23 @@ __init_shell() {
 
     # BEGIN EXTRA TOOLS
     if __missing bat --help; then
-        mgr="$(__package_manager bat bat)"
-        [ "$?" -ne 0 ] && return 1
-        if [ "$mgr" = "apt" ]; then
-            sudo ln -sf /usr/bin/batcat /usr/local/bin/bat || return 1
-        elif [ "$mgr" = "manual" ]; then
+        __package_manager bat bat
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             cargo install bat --root "$LOCAL_HOME" || return 1
+        elif [ "$returncode" -eq 3 ]; then
+            sudo ln -sf /usr/bin/batcat /usr/local/bin/bat || return 1
         fi
     fi
 
     if __missing micro --help; then
-        mgr="$(__package_manager micro micro)"
-        [ "$?" -ne 0 ] && return 1
-        if [ "$mgr" = "manual" ]; then
+        __package_manager micro micro
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
             "$ZSHSETUP_HOME/packages/micro.sh" || return 1
         fi
     fi
