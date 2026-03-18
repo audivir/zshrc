@@ -60,9 +60,9 @@ __package_manager() {
     apt_package="$2"
 
     os="$(uname)"
-    if [ "$os" = "Darwin" ] && [ ! -z "$brew_package" ]; then
+    if [ "$os" = "Darwin" ] && [ -n "$brew_package" ]; then
         options+=("brew")
-    elif [ "$os" = "Linux" ] && [ ! -z "$apt_package" ]; then
+    elif [ "$os" = "Linux" ] && [ -n "$apt_package" ]; then
         options+=("apt")
     fi
 
@@ -117,9 +117,7 @@ __init_cache() {
 }
 
 __init_shell() {
-    local os arch uid returncode
-    os="$(uname)"
-    arch="$(uname -m)"
+    local uid returncode
     uid="$(id -u)"
 
     __init_cache || return 1
@@ -172,7 +170,6 @@ __init_shell() {
     # END MICROMAMBA
 
     # BEGIN GO
-    local latest_go
     PATH="$XDG_DATA_HOME/go/bin:$XDG_DATA_HOME/golang/bin:$PATH"
     if __missing go help; then
         __package_manager go golang
@@ -267,18 +264,17 @@ __install_shell() {
     if [ -d "$ZSHSETUP_HOME" ]; then
         __eprint "$ZSHSETUP_HOME already exists, updating instead"
         __update_shell
-        exit 0
+        return 0
     fi
     trap 'rm -rf "$ZSHSETUP_HOME"' EXIT INT TERM
     if ! git clone "$ZSHSETUP_REPO" "$ZSHSETUP_HOME"; then
-        __exprint "Failed to clone $ZSHSETUP_REPO to $ZSHSETUP_HOME"
+        __eprint "Failed to clone $ZSHSETUP_REPO to $ZSHSETUP_HOME"
+        return 1
     fi
-    if ! __assure_link "$HOME/.zshrc" "$ZSHSETUP_HOME/.zshrc"; then
-        exit 1
-    fi
+    __assure_link "$HOME/.zshrc" "$ZSHSETUP_HOME/.zshrc" || return 1
     trap - EXIT INT TERM
     __eprint "zshsetup installed and linked"
-    exit 0
+    return 0
 }
 
 __update_shell() {
@@ -288,12 +284,12 @@ __update_shell() {
         __install_shell
         return "$?"
     fi
-    pushd "$ZSHSETUP_HOME"
+    pushd "$ZSHSETUP_HOME" || return 1
     git fetch || __eprint "Failed to fetch new data from $ZSHSETUP_REPO"
     git stash || __eprint "Failed to stash local changes"
     git merge || __eprint "Failed to merge updates"
     git stash pop || __eprint "Failed to reapply local changes"
-    popd
+    popd || return 1
 }
 
 if [ "$1" = "install" ]; then
