@@ -19,7 +19,7 @@ else
     exit 1
 fi
 
-latest_go="$(curl -sL "https://go.dev/VERSION?m=text" | head -n 1)"
+latest_go="$(curl -L "https://go.dev/VERSION?m=text" | head -n 1)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
 curl -L "https://go.dev/dl/$latest_go.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
