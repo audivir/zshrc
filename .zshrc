@@ -112,7 +112,7 @@ __init_cache() {
     fi
 }
 
-__init_shell() {
+__init_zshsetup() {
     local uid returncode
     uid="$(id -u)"
 
@@ -276,11 +276,11 @@ __init_shell() {
     # END THEME VIEWER
 }
 
-__install_shell() {
+__install_zshsetup() {
     if [ -d "$ZSHSETUP_HOME" ]; then
         __assure_link "$HOME/.zshrc" "$ZSHSETUP_HOME/.zshrc" || return 1
         __eprint "$ZSHSETUP_HOME already exists, updating instead"
-        __update_shell
+        __update_zshsetup
         return 0
     fi
     trap 'rm -rf "$ZSHSETUP_HOME"' EXIT INT TERM
@@ -294,11 +294,11 @@ __install_shell() {
     return 0
 }
 
-__update_shell() {
+__update_zshsetup() {
     local returncode
     if [ ! -d "$ZSHSETUP_HOME" ]; then
         __eprint "$ZSHSETUP_HOME does not exist, installing instead"
-        __install_shell
+        __install_zshsetup
         return "$?"
     fi
     pushd "$ZSHSETUP_HOME" || return 1
@@ -310,13 +310,13 @@ __update_shell() {
 }
 
 if [ "$1" = "install" ]; then
-  __install_shell
+  __install_zshsetup
   exit "$?"
 elif [ "$1" = "update" ]; then
-  __update_shell
+  __update_zshsetup
   exit "$?"
 fi
 
-__init_shell
+__init_zshsetup
 
 # BEGIN CUSTOM
