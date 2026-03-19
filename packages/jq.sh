@@ -26,6 +26,7 @@ tmpfile=$(mktemp)
 jq_bootstrap=$(mktemp)
 trap 'rm -f "$tmpfile" "$jq_bootstrap"' EXIT INT TERM
 curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-$os-$arch" -o "$jq_bootstrap"
+chmod +x "$jq_bootstrap"
 latest_release="$(curl --fail-with-body -L https://api.github.com/repos/jqlang/jq/releases/latest | "$jq_bootstrap" -r .tag_name)"
 curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/$latest_release/jq-$os-$arch" -o "$tmpfile"
 chmod +x "$tmpfile"
