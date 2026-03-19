@@ -164,6 +164,18 @@ __init_zshsetup() {
     fi
     # END HOMEBREW
 
+    # BEGIN JQ
+    if __missing micromamba --help; then
+        __package_manager jq jq
+        returncode="$?"
+        if [ "$returncode" -eq 1 ]; then
+            return 1
+        elif [ "$returncode" -eq 0 ]; then
+             "$ZSHSETUP_HOME/packages/jq.sh" || return 1
+        fi
+    fi
+    # END JQ
+
     # BEGIN MICROMAMBA
     if __missing micromamba --help; then
         __package_manager micromamba-static micromamba
