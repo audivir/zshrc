@@ -22,10 +22,10 @@ else
     exit 1
 fi
 
-latest_go="$(curl -L "https://go.dev/VERSION?m=text" | head -n 1)"
+latest_go="$(curl --fail-with-body -L "https://go.dev/VERSION?m=text" | head -n 1)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT INT TERM
-curl -L "https://go.dev/dl/$latest_go.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
+curl --fail-with-body -L "https://go.dev/dl/$latest_go.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
 mv "$tmpdir/go" "$XDG_DATA_HOME/golang"
 rm -rf "$tmpdir"
 trap - EXIT INT TERM
