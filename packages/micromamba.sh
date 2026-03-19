@@ -25,8 +25,8 @@ fi
 
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT INT TERM
-latest_release="$(curl -L https://api.github.com/repos/mamba-org/micromamba-releases/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
-curl -L "https://github.com/mamba-org/micromamba-releases/releases/download/$latest_release/micromamba-$os-$arch" -o "$tmpfile"
+latest_release="$(curl --fail-with-body -L https://api.github.com/repos/mamba-org/micromamba-releases/releases/latest | jq -r .tag_name)"
+curl --fail-with-body -L "https://github.com/mamba-org/micromamba-releases/releases/download/$latest_release/micromamba-$os-$arch" -o "$tmpfile"
 chmod +x "$tmpfile"
 mv "$tmpfile" "$XDG_BIN_HOME/micromamba"
 trap - EXIT INT TERM
