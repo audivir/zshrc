@@ -23,9 +23,12 @@ else
 fi
 
 tmpfile=$(mktemp)
-trap 'rm -f "$tmpfile"' EXIT INT TERM
-latest_release="$(curl --fail-with-body -L https://api.github.com/repos/jqlang/jq/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+jq_bootstrap=$(mktemp)
+trap 'rm -f "$tmpfile" "$jq_bootstrap"' EXIT INT TERM
+curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-$os-$arch" -o "$jq_bootstrap"
+latest_release="$(curl --fail-with-body -L https://api.github.com/repos/jqlang/jq/releases/latest | "$jq_bootstrap" -r .tag_name)"
 curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/$latest_release/jq-$os-$arch" -o "$tmpfile"
 chmod +x "$tmpfile"
 mv "$tmpfile" "$XDG_BIN_HOME/jq"
+rm "$jq_bootstrap"
 trap - EXIT INT TERM
