@@ -165,7 +165,7 @@ __init_zshsetup() {
     # END HOMEBREW
 
     # BEGIN JQ
-    if __missing micromamba --help; then
+    if __missing jq --help; then
         __package_manager jq jq
         returncode="$?"
         if [ "$returncode" -eq 1 ]; then
