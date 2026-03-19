@@ -34,54 +34,8 @@ __assure_dir() {
     mkdir -p "$dir_to_check" || __eprint "$dir_to_check not found and not creatable"
 }
 
-__menu() {
-    PYTHONPATH="$ZSHSETUP_HOME:$PYTHONPATH" python3 - <<EOF "${@}"
-import sys
-
-from simple_term_menu import TerminalMenu
-
-options = sys.argv[1:]
-terminal_menu = TerminalMenu(options)
-menu_entry_index = terminal_menu.show()
-if menu_entry_index is None:
-    raise SystemExit(1)
-print(options[menu_entry_index])
-EOF
-}
-
 __package_manager() {
-    local brew_package apt_package os mgr
-    local -a options
-    brew_package="$1"
-    apt_package="$2"
-
-    os="$(uname)"
-    if [ "$os" = "Darwin" ] && [ -n "$brew_package" ]; then
-        options+=("brew")
-    elif [ "$os" = "Linux" ] && [ -n "$apt_package" ]; then
-        options+=("apt")
-    fi
-
-    options+=("manual")
-
-    mgr="$(__menu "${options[@]}")" || return 1
-
-    case "$mgr" in
-        "manual")
-            return 0
-            ;;
-        "brew")
-            NONINTERACTIVE=1 brew install "$brew_package" || return 1
-            return 2
-            ;;
-        "apt")
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install "$apt_package" --no-install-recommends --yes || return 1
-            return 3
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    python3 "$ZSHSETUP_HOME/package_manager.py" "$@"
 }
 
 __source() {
@@ -90,12 +44,11 @@ __source() {
   eval "$env"
 }
 
-__missing() {
+__available() {
     local cmd
     cmd="$1"
     shift
-    command "$cmd" "$@" &>/dev/null && return 1
-    echo "$cmd is missing..."
+    command "$cmd" "$@" &>/dev/null
 }
 
 __init_cache() {
@@ -113,7 +66,7 @@ __init_cache() {
 }
 
 __init_zshsetup() {
-    local uid returncode
+    local uid
     uid="$(id -u)"
 
     __init_cache || return 1
@@ -151,7 +104,7 @@ __init_zshsetup() {
     ZSH_CUSTOM="$ZSH/custom"
     # shellcheck disable=SC2034
     ZSH_THEME="robbyrussell"
-    . "$ZSH/oh-my-zsh.sh"
+    . "$ZSH/oh-my-zsh.sh" || return 1
     # END OH-MY-ZSH
 
     HISTFILE="$ZSHSETUP_HOME/zsh_history"
@@ -165,26 +118,14 @@ __init_zshsetup() {
     # END HOMEBREW
 
     # BEGIN JQ
-    if __missing jq --help; then
-        __package_manager jq jq
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-             "$ZSHSETUP_HOME/packages/jq.sh" || return 1
-        fi
+    if ! __available jq --help; then
+        __package_manager jq jq jq || return 1
     fi
     # END JQ
 
     # BEGIN MICROMAMBA
-    if __missing micromamba --help; then
-        __package_manager micromamba-static micromamba
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-             "$ZSHSETUP_HOME/packages/micromamba.sh" || return 1
-        fi
+    if ! __available micromamba --help; then
+        __package_manager micromamba micromamba-static micromamba || return 1
     fi
     alias conda='micromamba'
     __source command micromamba shell hook --shell zsh || return 1
@@ -193,15 +134,8 @@ __init_zshsetup() {
 
     # BEGIN GO
     PATH="$XDG_DATA_HOME/go/bin:$XDG_DATA_HOME/golang/bin:$PATH"
-    if __missing go help; then
-        __package_manager go golang
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            "$ZSHSETUP_HOME/packages/go.sh" || return 1
-            PATH="$XDG_DATA_HOME/golang/bin:$PATH"
-        fi
+    if ! __available go help; then
+        __package_manager go go golang || return 1
     fi
     if [ -d "$XDG_DATA_HOME/golang" ]; then
         export GOROOT="$XDG_DATA_HOME/golang"
@@ -213,60 +147,28 @@ __init_zshsetup() {
     PATH="$XDG_DATA_HOME/cargo/bin:/opt/homebrew/opt/rustup/bin:$PATH"
     export RUSTUP_HOME="$XDG_DATA_HOME/rustup"
     export CARGO_HOME="$XDG_DATA_HOME/cargo"
-    if __missing rustup --help; then
-        __package_manager rustup rustup
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            "$ZSHSETUP_HOME/packages/rustup.sh" || return 1
-        fi
+    if ! __available rustup --help; then
+        __package_manager rustup rustup rustup || return 1
     fi
     # END RUST
 
     # BEGIN PYTHON
-    if __missing uv --help; then
-        __package_manager uv ""
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            command cargo install uv --root "$LOCAL_HOME" || return 1
-        fi
+    if ! __available uv --help; then
+        __package_manager uv uv "" || return 1
     fi
-    if __missing uvc --help; then
-        __package_manager uvc ""
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            "$ZSHSETUP_HOME/packages/uvc.sh" || return 1
-        fi
+    if ! __available uvc --help; then
+        __package_manager uvc uvc "" || return 1
     fi
     __source command uvc shell zsh || return 1
     # END PYTHON
 
     # BEGIN EXTRA TOOLS
-    if __missing bat --help; then
-        __package_manager bat bat
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            cargo install bat --root "$LOCAL_HOME" || return 1
-        elif [ "$returncode" -eq 3 ]; then
-            sudo ln -sf /usr/bin/batcat /usr/local/bin/bat || return 1
-        fi
+    if ! __available bat --help; then
+        __package_manager bat bat bat || return 1
     fi
 
-    if __missing micro --help; then
-        __package_manager micro micro
-        returncode="$?"
-        if [ "$returncode" -eq 1 ]; then
-            return 1
-        elif [ "$returncode" -eq 0 ]; then
-            "$ZSHSETUP_HOME/packages/micro.sh" || return 1
-        fi
+    if ! __available micro --help; then
+        __package_manager micro micro micro || return 1
     fi
     # END EXTRA TOOLS
 
@@ -284,7 +186,7 @@ __init_zshsetup() {
     export PATH
 
     # BEGIN THEME VIEWER
-    . "$ZSHSETUP_HOME/theme_viewer.sh"
+    . "$ZSHSETUP_HOME/theme_viewer.sh" || return 1
     # END THEME VIEWER
 }
 
@@ -307,7 +209,6 @@ __install_zshsetup() {
 }
 
 __update_zshsetup() {
-    local returncode
     if [ ! -d "$ZSHSETUP_HOME" ]; then
         __eprint "$ZSHSETUP_HOME does not exist, installing instead"
         __install_zshsetup
