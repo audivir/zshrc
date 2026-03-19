@@ -43,6 +43,7 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
         raise ValueError(f"Unsupported OS: {psys}")
     options.append("manual")
 
+    print(f"Install {manual_pkg} via:")
     choice = create_menu(*options)
     if not choice:
         raise ValueError("Install choice cancelled")
@@ -57,7 +58,7 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
         postinstall_script = PACKAGES / "brew" / f"{brew_pkg}.sh"
     elif choice == "apt":
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        subprocess.check_call(["apt-get", "install", "--no-install-recommends", "--yes", apt_pkg], env=env)
+        subprocess.check_call(["sudo", "apt-get", "install", "--no-install-recommends", "--yes", apt_pkg], env=env)
         postinstall_script = PACKAGES / "apt" / f"{apt_pkg}.sh"
     else:
         raise ValueError(f"Unexpected install choice: {choice}")
