@@ -10,7 +10,7 @@ local_bin="$XDG_BIN_HOME/bat"
 
 # check the currently installed version, echo "" if not installed
 check() {
-  2>/dev/null "$local_bin" --version | awk '{print $2}' || echo ""
+  2>/dev/null "$local_bin" --version | awk '{print "v"$2}' || echo ""
 }
 
 # fetch the latest version
