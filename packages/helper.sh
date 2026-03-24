@@ -5,13 +5,13 @@ set -euo pipefail
 get_latest_github() {
   local repo
   repo="$1"
-  curl --fail-with-body -L "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name
+  curl --fail-with-body -sL "https://api.github.com/repos/$repo/releases/latest" | jq -r .tag_name
 }
 
 get_latest_crate() {
   local crate
   crate="$1"
-  curl --fail-with-body -L "https://crates.io/api/v1/crates/$crate" | jq -r .crate.max_stable_version
+  curl --fail-with-body -sL "https://crates.io/api/v1/crates/$crate" | jq -r .crate.max_stable_version
 }
 
 __set_os_arch() {

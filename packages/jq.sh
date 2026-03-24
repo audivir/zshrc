@@ -17,7 +17,20 @@ check() {
 
 # fetch the latest version
 fetch() {
+    local jq_tmpdir
+    if ! jq --help; then
+        set_os_arch "linux" "amd64" "linux" "amd64" "macos" "arm64" "macos" "arm64"
+        jq_tmpdir=$(mktemp -d)
+        trap 'rm -rf "$jq_tmpdir"' EXIT INT TERM
+        curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-$os-$arch" -o "$jq_tmpdir/jq"
+        chmod +x "$jq_tmpdir/jq"
+        export PATH="$jq_tmpdir:$PATH"
+    fi
     get_latest_github jqlang/jq
+    if [ -n "$jq_tmpdir" ]; then
+        rm -rf "$jq_tmpdir"
+        trap - EXIT INT TERM
+    fi
 }
 
 # install the most recent version
@@ -26,14 +39,10 @@ install() {
     version="$1"
     set_os_arch "linux" "amd64" "linux" "amd64" "macos" "arm64" "macos" "arm64"
     tmpfile=$(mktemp)
-    jq_bootstrap=$(mktemp)
-    trap 'rm -f "$tmpfile" "$jq_bootstrap"' EXIT INT TERM
-    curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/jq-1.8.0/jq-$os-$arch" -o "$jq_bootstrap"
-    chmod +x "$jq_bootstrap"
+    trap 'rm -f "$tmpfile"' EXIT INT TERM
     curl --fail-with-body -L "https://github.com/jqlang/jq/releases/download/$version/jq-$os-$arch" -o "$tmpfile"
     chmod +x "$tmpfile"
     mv "$tmpfile" "$XDG_BIN_HOME/jq"
-    rm "$jq_bootstrap"
     trap - EXIT INT TERM
 }
 

@@ -230,14 +230,9 @@ __update_zshsetup() {
 }
 
 __uninstall_manual() {
-    local package
-    package="$1"
-
-    if [ -z "$package" ]; then
-        __eprint "No package provided to uninstall"
-    else
-        "$ZSHSETUP_HOME/packages/$package.sh" uninstall
-    fi
+    for p in "$@"; do
+        "$ZSHSETUP_HOME/packages/$p.sh" uninstall || __eprint "Failed to uninstall $p"
+    done
 }
 
 if [ "$1" = "install" ]; then
