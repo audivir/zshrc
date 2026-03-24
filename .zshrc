@@ -56,7 +56,7 @@ __init_cache() {
     user_cache="$HOME/.cache"
     scratch_cache="/scratch/$USER/.cache"
     # if /home if mounted, look for /scratch to use as cache directory
-    if [ -n "$ZSHSETUP_IGNORESCRATCH" ] && [ -d "/scratch" ]; then
+    if [ -z "$ZSHSETUP_IGNORESCRATCH" ] && [ -d "/scratch" ]; then
         __assure_dir "$scratch_cache" || return 1
         __assure_link "$user_cache" "$scratch_cache" || return 1
         CACHE_DIR="$scratch_cache"
