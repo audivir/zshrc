@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # shellcheck shell=bash
-# shellcheck disable=SC1091,SC1094
+# shellcheck disable=SC1091
 set -euo pipefail
 
 . "$ZSHSETUP_HOME/packages/helper.sh"
