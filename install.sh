@@ -20,4 +20,4 @@ else
     ZSH_BIN="zsh"
 fi
 
-git archive --remote=ssh://git@git.audivir.de/tihoph/zshrc HEAD .zshrc | tar xO | "$ZSH_BIN" -s -- install
+curl --fail-with-body https://git.audivir.de/tihoph/zshrc/raw/branch/main/.zshrc | "$ZSH_BIN" -s -- install
