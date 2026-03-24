@@ -22,9 +22,11 @@ fetch() {
 
 # install the most recent version
 install() {
+    local url
+    url="https://github.com/audivir/uvc/raw/refs/heads/main/uvc"
     tmpfile=$(mktemp)
     trap 'rm -f "$tmpfile"' EXIT INT TERM
-    curl --fail-with-body -L "https://github.com/audivir/uvc/raw/refs/heads/main/uvc" -o "$tmpfile"
+    curl --fail-with-body -L "$url" -o "$tmpfile"
     chmod +x "$tmpfile"
     mv "$tmpfile" "$XDG_BIN_HOME/uvc"
     trap - EXIT INT TERM

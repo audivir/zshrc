@@ -16,7 +16,7 @@ check() {
 # fetch the latest version
 fetch() {
   local version
-  version=$(get_latest_github micro-editor/micro)
+  version=$(get_latest_github "micro-editor/micro")
   echo "${version#v}"
 }
 

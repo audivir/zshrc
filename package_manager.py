@@ -47,11 +47,12 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
     choice = create_menu(*options)
     if not choice:
         raise ValueError("Install choice cancelled")
+    print(choice)
 
     env = os.environ.copy()
     postinstall_script: Path | None = None
     if choice == "manual":
-        subprocess.check_call([manual_script])
+        subprocess.check_call([manual_script, "install"])
     elif choice == "brew":
         env["NONINTERACTIVE"] = "1"
         subprocess.check_call(["brew", "install", brew_pkg], env=env)

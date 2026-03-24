@@ -15,14 +15,15 @@ check() {
 
 # fetch the latest version
 fetch() {
-    curl --fail-with-body -L https://api.github.com/repos/rust-lang/rustup/tags \
-        | jq -r '.[0].name'
+    local url
+    url="https://api.github.com/repos/rust-lang/rustup/tags"
+    curl --fail-with-body -L "$url" | jq -r '.[0].name'
 }
 
 # install the most recent version
 install() {
-    curl --fail-with-body -L https://sh.rustup.rs | sh -s -- \
-  	    --default-toolchain nightly-2026-01-28 \
+    curl --fail-with-body -L "https://sh.rustup.rs" | sh -s -- \
+  	    --default-toolchain "nightly-2026-01-28" \
   	    --no-update-default-toolchain \
   	    --no-modify-path -y
 }

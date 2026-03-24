@@ -15,23 +15,21 @@ check() {
 
 # fetch the latest version
 fetch() {
-    get_latest_github mamba-org/micromamba-releases
+    get_latest_github "mamba-org/micromamba-releases"
 }
 
 # install the most recent version
 install() {
-    local version
+    local version url
     version="$1"
     set_os_arch "linux" "64" "linux" "aarch64" "osx" "64" "osx" "arm64"
+    url="https://github.com/mamba-org/micromamba-releases/releases/download/$version/micromamba-$os-$arch"
     tmpfile=$(mktemp)
     trap 'rm -f "$tmpfile"' EXIT INT TERM
-    url="https://github.com/mamba-org/micromamba-releases/releases/download/$version/micromamba-$os-$arch"
-    echo "Downloading $name from $url"
     curl --fail-with-body -L "$url" -o "$tmpfile"
     chmod +x "$tmpfile"
     mv "$tmpfile" "$XDG_BIN_HOME/micromamba"
     trap - EXIT INT TERM
-
 }
 
 # uninstall the installed package

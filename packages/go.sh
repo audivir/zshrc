@@ -15,17 +15,20 @@ check() {
 
 # fetch the latest version
 fetch() {
-    curl --fail-with-body -L "https://go.dev/VERSION?m=text" | head -n 1
+    local url
+    url="https://go.dev/VERSION?m=text"
+    curl --fail-with-body -sL "$url" | head -n 1
 }
 
 # install the most recent version
 install() {
-    local version
+    local version url
     version="$1"
     set_os_arch "linux" "amd64" "linux" "arm64" "darwin" "amd64" "darwin" "arm64"
+    url="https://go.dev/dl/$version.$os-$arch.tar.gz"
     tmpdir="$(mktemp -d)"
     trap 'rm -rf "$tmpdir"' EXIT INT TERM
-    curl --fail-with-body -L "https://go.dev/dl/$version.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
+    curl --fail-with-body -L "$url" | tar -xzC "$tmpdir"
     mv "$tmpdir/go" "$XDG_DATA_HOME/golang"
     rm -rf "$tmpdir"
     trap - EXIT INT TERM
