@@ -17,11 +17,13 @@ if ! __available curl --help || ! __available git --help; then
     exit 1
 fi
 
-if ! __available zsh --help; then
-    curl --fail-with-body -L https://raw.githubusercontent.com/romkatv/zsh-bin/master/install | sh -s -- -d "$HOME/.local" -e "no" || exit 1
+
+ZSH_BIN="zsh"
+if ! __available "$ZSH_BIN" --help; then
     ZSH_BIN="$HOME/.local/bin/zsh"
-else
-    ZSH_BIN="zsh"
+    if ! __available "$ZSH_BIN" --help; then
+        curl --fail-with-body -L https://raw.githubusercontent.com/romkatv/zsh-bin/master/install | sh -s -- -d "$HOME/.local" -e "no" || exit 1
+    fi
 fi
 
 curl --fail-with-body -L https://github.com/audivir/zshrc/raw/refs/heads/main/.zshrc | "$ZSH_BIN" -s -- install
