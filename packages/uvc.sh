@@ -17,7 +17,7 @@ check() {
 fetch() {
     local url
     url="https://github.com/audivir/uvc/raw/refs/heads/main/uvc"
-    curl --fail-with-body -L "$url" | sha256sum | awk '{print $1}'
+    curl --fail-with-body -sL "$url" | sha256sum | awk '{print $1}'
 }
 
 # install the most recent version
