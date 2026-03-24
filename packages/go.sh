@@ -25,7 +25,6 @@ install() {
     set_os_arch "linux" "amd64" "linux" "arm64" "darwin" "amd64" "darwin" "arm64"
     tmpdir="$(mktemp -d)"
     trap 'rm -rf "$tmpdir"' EXIT INT TERM
-    # shellcheck disable=SC2154
     curl --fail-with-body -L "https://go.dev/dl/$version.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
     mv "$tmpdir/go" "$XDG_DATA_HOME/golang"
     rm -rf "$tmpdir"
