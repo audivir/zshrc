@@ -219,7 +219,7 @@ __update_zshsetup() {
     git stash || __eprint "Failed to stash local changes"
     git merge || __eprint "Failed to merge updates"
     git stash pop || __eprint "Failed to reapply local changes"
-    popd || return 1
+    popd || true
 
     packages=(jq micromamba go rustup uv uvc bat micro)
     for p in "${packages[@]}"; do
