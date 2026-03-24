@@ -24,4 +24,4 @@ else
     ZSH_BIN="zsh"
 fi
 
-curl --fail-with-body https://git.audivir.de/tihoph/zshrc/raw/branch/main/.zshrc | "$ZSH_BIN" -s -- install
+curl --fail-with-body https://github.com/audivir/zshrc/raw/refs/heads/main/.zshrc | "$ZSH_BIN" -s -- install
