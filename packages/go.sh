@@ -1,31 +1,39 @@
 #!/usr/bin/env zsh
 # shellcheck shell=bash
+# shellcheck disable=SC1091,SC1094
 set -euo pipefail
 
-os="$(uname)"
-if [ "$os" = "Linux" ]; then
-    os="linux"
-elif [ "$os" = "Darwin" ]; then
-    os="darwin"
-else
-    echo "Unsupported OS: $os" >&2
-    exit 1
-fi
+. "$ZSHSETUP_HOME/packages/helper.sh"
 
-arch="$(uname -m)"
-if [ "$arch" = "x86_64" ] || [ "$arch" = "amd64" ]; then
-    arch="amd64"
-elif [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
-    arch="arm64"
-else
-    echo "Unsupported architecture: $arch" >&2
-    exit 1
-fi
+name="go"
+local_bin="$XDG_DATA_HOME/golang/bin/go"
 
-latest_go="$(curl --fail-with-body -L "https://go.dev/VERSION?m=text" | head -n 1)"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT INT TERM
-curl --fail-with-body -L "https://go.dev/dl/$latest_go.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
-mv "$tmpdir/go" "$XDG_DATA_HOME/golang"
-rm -rf "$tmpdir"
-trap - EXIT INT TERM
+# check the currently installed version, echo "" if not installed
+check() {
+    2>/dev/null "$local_bin" version | awk '{print $3}' || echo ""
+}
+
+# fetch the latest version
+fetch() {
+    curl --fail-with-body -L "https://go.dev/VERSION?m=text" | head -n 1
+}
+
+# install the most recent version
+install() {
+    local version
+    version="$1"
+    set_os_arch "linux" "amd64" "linux" "arm64" "darwin" "amd64" "darwin" "arm64"
+    tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' EXIT INT TERM
+    curl --fail-with-body -L "https://go.dev/dl/$version.$os-$arch.tar.gz" | tar -xzC "$tmpdir"
+    mv "$tmpdir/go" "$XDG_DATA_HOME/golang"
+    rm -rf "$tmpdir"
+    trap - EXIT INT TERM
+}
+
+# uninstall the installed package
+uninstall() {
+    rm -r "$XDG_DATA_HOME/golang"
+}
+
+main "$name" "$@"

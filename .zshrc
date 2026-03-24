@@ -220,6 +220,24 @@ __update_zshsetup() {
     git merge || __eprint "Failed to merge updates"
     git stash pop || __eprint "Failed to reapply local changes"
     popd || return 1
+
+    packages=(jq micromamba go rustup uv uvc bat micro)
+    for p in "${packages[@]}"; do
+        "$ZSHSETUP_HOME/packages/$p.sh" upgrade
+    done
+
+    omz update
+}
+
+__uninstall_manual() {
+    local package
+    package="$1"
+
+    if [ -z "$package" ]; then
+        __eprint "No package provided to uninstall"
+    else
+        "$ZSHSETUP_HOME/packages/$package.sh" uninstall
+    fi
 }
 
 if [ "$1" = "install" ]; then
