@@ -5,7 +5,7 @@ set -euo pipefail
 
 . "$ZSHSETUP_HOME/packages/helper.sh"
 
-name="jq."
+name="jq"
 local_bin="$XDG_BIN_HOME/jq"
 
 # check the currently installed version, echo "" if not installed
