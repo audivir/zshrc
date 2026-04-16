@@ -165,9 +165,9 @@ class TerminalMenu:
             self._menu_entries = menu_entries
             self._case_sensitive = case_senitive
             self._show_search_hint = show_search_hint
-            self._matches = []  # type: List[Tuple[int, Match[str]]]
-            self._search_regex = None  # type: Optional[Pattern[str]]
-            self._change_callback = None  # type: Optional[Callable[[], None]]
+            self._matches = []  # type: list[tuple[int, Match[str]]]
+            self._search_regex = None  # type: Pattern[str] | None
+            self._change_callback = None  # type: Callable[[], None] | None
             # Use the property setter since it has some more logic
             self.search_text = search_text
 
@@ -289,7 +289,7 @@ class TerminalMenu:
             self._selection = selection
             self._viewport = viewport
             self._cycle_cursor = cycle_cursor
-            self._active_displayed_index = None  # type: Optional[int]
+            self._active_displayed_index = None  # type: int | None
             self._skip_indices = skip_indices
             self.update_view()
 
@@ -597,8 +597,8 @@ class TerminalMenu:
         "tab": "\t",
     }
     _codenames = tuple(_codename_to_capname.keys())
-    _codename_to_terminal_code = None  # type: Optional[Dict[str, str]]
-    _terminal_code_to_codename = None  # type: Optional[Dict[str, str]]
+    _codename_to_terminal_code = None  # type: dict[str, str] | None
+    _terminal_code_to_codename = None  # type: dict[str, str] | None
 
     def __init__(
         self,
@@ -663,10 +663,10 @@ class TerminalMenu:
             separator_pattern = re.compile(r"([^\\])\|")
             escaped_separator_pattern = re.compile(r"\\\|")
             menu_entry_pattern = re.compile(r"^(?:\[(\S)\]\s*)?([^\x1F]+)(?:\x1F([^\x1F]*))?")
-            shortcut_keys = []  # type: List[Optional[str]]
-            menu_entries = []  # type: List[str]
-            preview_arguments = []  # type: List[Optional[str]]
-            skip_indices = []  # type: List[int]
+            shortcut_keys = []  # type: list[str | None]
+            menu_entries = []  # type: list[str]
+            preview_arguments = []  # type: list[str | None]
+            skip_indices = []  # type: list[int]
 
             for idx, entry in enumerate(entries):
                 if entry is None or (entry == "" and skip_empty_entries):
@@ -694,7 +694,7 @@ class TerminalMenu:
         def convert_preselected_entries_to_indices(
             preselected_indices_or_entries: Iterable[str | int],
         ) -> set[int]:
-            menu_entry_to_indices = {}  # type: Dict[str, Set[int]]
+            menu_entry_to_indices = {}  # type: dict[str, set[int]]
             for menu_index, menu_entry in enumerate(self._menu_entries):
                 menu_entry_to_indices.setdefault(menu_entry, set())
                 menu_entry_to_indices[menu_entry].add(menu_index)
@@ -728,7 +728,7 @@ class TerminalMenu:
             shortcut_hints_in_parentheses: bool,
         ) -> tuple[str, ...]:
             if title_or_status_bar is None:
-                lines = []  # type: List[str]
+                lines = []  # type: list[str]
             elif isinstance(title_or_status_bar, str):
                 lines = title_or_status_bar.split("\n")
             else:
@@ -804,8 +804,8 @@ class TerminalMenu:
         self._show_search_hint_text = show_search_hint_text
         self._show_shortcut_hints = show_shortcut_hints
         self._show_shortcut_hints_in_status_bar = show_shortcut_hints_in_status_bar
-        self._status_bar_func = None  # type: Optional[Callable[[str], str]]
-        self._status_bar_lines = None  # type: Optional[Tuple[str, ...]]
+        self._status_bar_func = None  # type: Callable[[str], str] | None
+        self._status_bar_lines = None  # type: tuple[str, ...] | None
         if callable(status_bar):
             self._status_bar_func = status_bar
         else:
@@ -827,11 +827,11 @@ class TerminalMenu:
         )
         self._show_multi_select_hint = show_multi_select_hint
         self._show_multi_select_hint_text = show_multi_select_hint_text
-        self._chosen_accept_key = None  # type: Optional[str]
-        self._chosen_menu_index = None  # type: Optional[int]
-        self._chosen_menu_indices = None  # type: Optional[Tuple[int, ...]]
+        self._chosen_accept_key = None  # type: str | None
+        self._chosen_menu_index = None  # type: int | None
+        self._chosen_menu_indices = None  # type: tuple[int, ...] | None
         self._paint_before_next_read = False
-        self._previous_displayed_menu_height = None  # type: Optional[int]
+        self._previous_displayed_menu_height = None  # type: int | None
         self._reading_next_key = False
         self._search = self.Search(
             self._menu_entries,
@@ -857,10 +857,10 @@ class TerminalMenu:
         if cursor_index and 0 < cursor_index < len(self._menu_entries):
             self._view.active_menu_index = cursor_index
         self._search.change_callback = self._view.update_view
-        self._old_term = None  # type: Optional[List[Union[int, List[bytes]]]]
-        self._new_term = None  # type: Optional[List[Union[int, List[bytes]]]]
-        self._tty_in = None  # type: Optional[TextIO]
-        self._tty_out = None  # type: Optional[TextIO]
+        self._old_term = None  # type: list[int | list[bytes]] | None
+        self._new_term = None  # type: list[int | list[bytes]] | None
+        self._tty_in = None  # type: TextIO | None
+        self._tty_out = None  # type: TextIO | None
         self._user_locale = get_locale()
         self._check_for_valid_styles()
         # backspace can be queried from the terminal database but is unreliable, query the terminal directly instead
@@ -1013,7 +1013,7 @@ class TerminalMenu:
             cast("int", self._new_term[3]) & ~termios.ICANON & ~termios.ECHO & ~termios.ICRNL
         )
         self._new_term[0] = cast("int", self._new_term[0]) & ~termios.ICRNL
-        # Set the timings for an unbuffered read: Return immediately after at least one character has arrived and don't
+        # set the timings for an unbuffered read: Return immediately after at least one character has arrived and don't
         # wait for further characters
         cast("list[bytes]", self._new_term[6])[termios.VMIN] = b"\x01"
         cast("list[bytes]", self._new_term[6])[termios.VTIME] = b"\x00"
@@ -1662,7 +1662,7 @@ class TerminalMenu:
                 "quit": set(self._quit_keys),
                 "search_start": set((self._search_key,)),
                 "backspace": set(("backspace",)),
-            }  # type: Dict[str, Set[Optional[str]]]
+            }  # type: dict[str, set[str | None]]
             while True:
                 self._paint_menu()
                 current_menu_action_to_keys = copy.deepcopy(menu_action_to_keys)
@@ -1781,7 +1781,7 @@ class TerminalMenu:
         return self._chosen_menu_indices
 
 
-class AttributeDict(dict):  # type: ignore
+class Attributedict(dict):  # type: ignore
     def __getattr__(self, attr: str) -> Any:
         return self[attr]
 
@@ -2082,9 +2082,9 @@ def get_argumentparser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_arguments() -> AttributeDict:
+def parse_arguments() -> Attributedict:
     parser = get_argumentparser()
-    args = AttributeDict({key: value for key, value in vars(parser.parse_args()).items()})
+    args = Attributedict({key: value for key, value in vars(parser.parse_args()).items()})
     if not args.print_version and not args.entries:
         raise NoMenuEntriesError("No menu entries given!")
     if args.skip_empty_entries:

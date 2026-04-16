@@ -1,3 +1,5 @@
+Use environment variable "ZSHSETUP_CHOICE" to default to a package manager.
+
 ```bash
 curl --fail-with-body -L https://github.com/audivir/zshrc/raw/refs/heads/main/install.sh | sh
 

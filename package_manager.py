@@ -15,6 +15,7 @@ from simple_term_menu import TerminalMenu
 if TYPE_CHECKING:
     from typing import TypeAlias
 
+ENV_VAR_NAME = "ZSHSETUP_CHOICE"
 PACKAGES = Path(__file__).parent / "packages"
 
 ManagerT: TypeAlias = Literal["brew", "apt", "manual"]
@@ -27,8 +28,14 @@ def eprint(*args: Any) -> None:
 
 def create_menu(*options: ManagerT) -> ManagerT | None:
     """Create a terminal menu and return the choice or None if cancelled."""
+    if choice := os.getenv(ENV_VAR_NAME):
+        if choice in options:
+            return choice  # type: ignore[return-value]
+        return "manual"
     terminal_menu = TerminalMenu(options)
     choice_ix = terminal_menu.show()
+    if isinstance(choice_ix, tuple):
+        raise RuntimeError("Multiple options selected")  # noqa: TRY004
     if choice_ix is None:
         return None
     return options[choice_ix]
@@ -42,7 +49,7 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:  # no
     if not manual_script.exists():
         raise ValueError(f"Script to install {manual_pkg} does not exist: {manual_script}")
 
-    options: list[str] = []
+    options: list[ManagerT] = []
     psys = platform.system()
     if psys == "Darwin":
         if brew_pkg:
