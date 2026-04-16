@@ -108,7 +108,6 @@ __init_zshsetup() {
     # END OH-MY-ZSH
 
     HISTFILE="$ZSHSETUP_HOME/zsh_history"
-    PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
     # BEGIN HOMEBREW
     if [ -f "/opt/homebrew/bin/brew" ]; then
@@ -116,6 +115,8 @@ __init_zshsetup() {
         alias homebrewupdate='brew update && brew upgrade --formulae && brew cu --yes && cd /opt/homebrew && git stash pop &>/dev/null || true && cd -'
     fi
     # END HOMEBREW
+
+    PATH="$XDG_BIN_HOME:$HOME/bin:$PATH"
 
     # BEGIN JQ
     if ! __available jq --help; then
