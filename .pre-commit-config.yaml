@@ -15,11 +15,11 @@ ci:
   autoupdate_commit_msg: "chore: update pre-commit hooks"
   autofix_commit_msg: "style: pre-commit fixes"
 repos:
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.15.9
-  #   hooks:
-  #     - id: ruff-format
-  #     - id: ruff-check
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.9
+    hooks:
+      - id: ruff-format
+      - id: ruff-check
   # standard hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

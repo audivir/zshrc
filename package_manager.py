@@ -1,19 +1,29 @@
+"""CLI to select a package manager and install an utility."""
+
+# ruff: noqa: S603,S607
 from __future__ import annotations
 
 import os
-import sys
-from pathlib import Path
 import platform
 import subprocess
-from typing import Literal, TYPE_CHECKING
+import sys
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal
+
 from simple_term_menu import TerminalMenu
 
 if TYPE_CHECKING:
-  from typing import TypeAlias
+    from typing import TypeAlias
 
 PACKAGES = Path(__file__).parent / "packages"
 
 ManagerT: TypeAlias = Literal["brew", "apt", "manual"]
+
+
+def eprint(*args: Any) -> None:
+    """Print to stderr."""
+    print(*args, file=sys.stderr)  # noqa: T201
+
 
 def create_menu(*options: ManagerT) -> ManagerT | None:
     """Create a terminal menu and return the choice or None if cancelled."""
@@ -23,7 +33,8 @@ def create_menu(*options: ManagerT) -> ManagerT | None:
         return None
     return options[choice_ix]
 
-def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
+
+def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:  # noqa: C901,PLR0912
     """Install a package over a user-selected installation way."""
     if not manual_pkg:
         raise ValueError("No package name provided")
@@ -43,11 +54,11 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
         raise ValueError(f"Unsupported OS: {psys}")
     options.append("manual")
 
-    print(f"Install {manual_pkg} via:")
+    eprint(f"Install {manual_pkg} via:")
     choice = create_menu(*options)
     if not choice:
         raise ValueError("Install choice cancelled")
-    print(choice)
+    print(choice)  # noqa: T201
 
     env = os.environ.copy()
     postinstall_script: Path | None = None
@@ -59,7 +70,9 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
         postinstall_script = PACKAGES / "brew" / f"{brew_pkg}.sh"
     elif choice == "apt":
         env["DEBIAN_FRONTEND"] = "noninteractive"
-        subprocess.check_call(["sudo", "apt-get", "install", "--no-install-recommends", "--yes", apt_pkg], env=env)
+        subprocess.check_call(
+            ["sudo", "apt-get", "install", "--no-install-recommends", "--yes", apt_pkg], env=env
+        )
         postinstall_script = PACKAGES / "apt" / f"{apt_pkg}.sh"
     else:
         raise ValueError(f"Unexpected install choice: {choice}")
@@ -67,19 +80,21 @@ def package_manager(manual_pkg: str, brew_pkg: str, apt_pkg: str) -> None:
     if postinstall_script and postinstall_script.exists():
         subprocess.check_call([postinstall_script])
 
+
 def main() -> None:
     """Main entrypoint for the CLI."""
     # TODO(tihoph): use ArgumentParser?
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 4:  # noqa: PLR2004
         raise ValueError("Not enough arguments")
     manual_pkg = sys.argv[1]
     brew_pkg = sys.argv[2]
     apt_pkg = sys.argv[3]
     package_manager(manual_pkg, brew_pkg, apt_pkg)
 
+
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"{e}", file=sys.stderr)
+        eprint(e)
         raise SystemExit(1) from e
